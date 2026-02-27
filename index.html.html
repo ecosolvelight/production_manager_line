@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#f97316">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ECO App">
+    <title>Ecosolve Lightning - Production</title>
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Ecosolve Production","short_name":"ECO","start_url":".","display":"standalone","background_color":"#f9fafb","theme_color":"#f97316","icons":[{"src":"https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png","sizes":"192x192","type":"image/png"}]}'>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide { display: none !important; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .page-transition { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f97316; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden flex justify-center">
+
+    <div class="w-full max-w-md h-full bg-gray-50 flex flex-col relative shadow-2xl overflow-hidden">
+        
+        <header class="bg-gradient-to-r from-emerald-600 to-orange-500 text-white pt-8 pb-4 px-6 shadow-md z-10 rounded-b-3xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">ECOSOLVE</h1>
+                    <p class="text-xs text-orange-100">Production Management</p>
+                </div>
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border-2 border-white p-1">
+                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png" alt="Ecosolve Logo" class="w-full h-full object-contain">
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 pb-24 z-0 custom-scrollbar" id="main-content">
+            
+            <div id="page-home" class="page-transition h-full flex flex-col justify-center items-center text-center">
+                <div class="w-36 h-36 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-6 p-4 border border-orange-100">
+                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png" alt="Logo" class="w-full object-contain">
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome Supervisor</h2>
+                <p class="text-gray-500 text-sm mb-8 px-4">Manage orders, control production lines, and track live hardware data.</p>
+                <div class="grid grid-cols-2 gap-3 w-full max-w-[280px]">
+                    <button onclick="navigate('add')" class="bg-emerald-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-emerald-600 transition-all flex flex-col items-center">
+                        <i class="fas fa-plus mb-1 text-lg"></i> Add Order
+                    </button>
+                    <button onclick="navigate('assign')" class="bg-orange-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-orange-600 transition-all flex flex-col items-center">
+                        <i class="fas fa-network-wired mb-1 text-lg"></i> Assign
+                    </button>
+                </div>
+            </div>
+
+            <div id="page-add" class="page-transition hide">
+                <h2 class="text-xl font-bold mb-4 text-gray-700"><i class="fas fa-plus-circle text-orange-500 mr-2"></i>Add New Order</h2>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-orange-100">
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Order Number (Format: 26-1234)</label>
+                        <input type="text" id="orderNo" placeholder="26-1234" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 transition-colors bg-transparent">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Category (Block Capitals)</label>
+                        <input type="text" id="category" placeholder="e.g. A, B, MAIN" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 uppercase transition-colors bg-transparent">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Product</label>
+                        <select id="productSelect" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 bg-transparent text-gray-700">
+                            <option value="">Loading products...</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Quantity</label>
+                        <input type="number" id="quantity" placeholder="0" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 transition-colors bg-transparent">
+                    </div>
+                    
+                    <button id="saveOrderBtn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-orange-600 active:scale-95 transition-all flex justify-center items-center">
+                        <i class="fas fa-save mr-2"></i> Save Order
+                    </button>
+                </div>
+            </div>
+
+            <div id="page-assign" class="page-transition hide">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-tasks text-emerald-500 mr-2"></i>Control Orders</h2>
+                    <span class="text-xs bg-orange-100 text-orange-700 py-1 px-3 rounded-full font-bold" id="orderCount">0 Pending</span>
+                </div>
+                <div id="ordersList" class="space-y-4 pb-10">
+                    <div class="text-center text-gray-400 py-10">Loading orders...</div>
+                </div>
+            </div>
+
+            <div id="page-matrix" class="page-transition hide h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Live Matrix</h2>
+                    <button onclick="loadProductionMatrix()" class="text-xs bg-blue-100 text-blue-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
+                        <i class="fas fa-sync-alt mr-1"></i> Refresh
+                    </button>
+                </div>
+                <p class="text-[11px] text-gray-500 mb-2 px-1">Horizontal scroll for hourly data.</p>
+                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                    <div class="overflow-x-auto custom-scrollbar flex-1 pb-2">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="px-2 py-3 border-b font-semibold bg-gray-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Line</th>
+                                    <th class="px-2 py-3 border-b font-semibold min-w-[90px] text-orange-600">Order No</th>
+                                    <th class="px-2 py-3 border-b font-semibold min-w-[110px]">Product</th>
+                                    <th class="px-2 py-3 border-b font-bold text-emerald-600 text-center">TOTAL</th>
+                                    <th class="px-2 py-3 border-b text-center">08:00</th><th class="px-2 py-3 border-b text-center">09:00</th>
+                                    <th class="px-2 py-3 border-b text-center">10:00</th><th class="px-2 py-3 border-b text-center">11:00</th>
+                                    <th class="px-2 py-3 border-b text-center">12:00</th><th class="px-2 py-3 border-b text-center">13:00</th>
+                                    <th class="px-2 py-3 border-b text-center">14:00</th><th class="px-2 py-3 border-b text-center">15:00</th>
+                                    <th class="px-2 py-3 border-b text-center">16:00</th><th class="px-2 py-3 border-b text-center">17:00</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrixTableBody" class="text-[11px] text-gray-700 divide-y divide-gray-100">
+                                <tr><td colspan="14" class="text-center py-8 text-gray-400">Loading matrix...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-completed" class="page-transition hide">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-check-double text-emerald-500 mr-2"></i>Completed</h2>
+                    <span class="text-xs bg-emerald-100 text-emerald-700 py-1 px-3 rounded-full font-bold" id="compOrderCount">0 Done</span>
+                </div>
+                <div id="completedList" class="space-y-3 pb-10">
+                    <div class="text-center text-gray-400 py-10">No completed orders yet.</div>
+                </div>
+            </div>
+
+        </main>
+
+        <div id="loader" class="absolute inset-0 bg-white bg-opacity-80 z-50 flex flex-col justify-center items-center hide glass-effect">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500 mb-3"></div>
+            <p class="text-orange-600 font-medium text-sm">Processing...</p>
+        </div>
+        <div id="customAlert" class="absolute top-4 left-4 right-4 bg-gray-800 text-white p-4 rounded-xl shadow-2xl z-50 transform -translate-y-24 transition-transform duration-300 flex items-center">
+            <i id="alertIcon" class="fas fa-info-circle text-2xl mr-3 text-blue-400"></i>
+            <span id="alertMsg" class="font-medium text-sm">Message</span>
+        </div>
+
+        <nav class="absolute bottom-0 w-full glass-effect border-t border-gray-200 pb-safe z-20">
+            <div class="flex justify-between items-center px-2 py-2">
+                <button onclick="navigate('home')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="home">
+                    <i class="fas fa-home text-lg mb-1"></i><span class="text-[9px] font-medium">Home</span>
+                </button>
+                <button onclick="navigate('add')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="add">
+                    <i class="fas fa-plus-square text-lg mb-1"></i><span class="text-[9px] font-medium">Add</span>
+                </button>
+                <button onclick="navigate('assign')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-orange-500 flex-1" data-target="assign">
+                    <i class="fas fa-sliders-h text-lg mb-1"></i><span class="text-[9px] font-medium">Control</span>
+                </button>
+                <button onclick="navigate('matrix')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-blue-500 flex-1" data-target="matrix">
+                    <i class="fas fa-chart-pie text-lg mb-1"></i><span class="text-[9px] font-medium">Matrix</span>
+                </button>
+                <button onclick="navigate('completed')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="completed">
+                    <i class="fas fa-check-double text-lg mb-1"></i><span class="text-[9px] font-medium">Done</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // --- 1. Main Database Configuration ---
+        const mainFirebaseConfig = { databaseURL: "https://linemanage002-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+        const appMain = initializeApp(mainFirebaseConfig, "AppMain");
+        const db = getDatabase(appMain);
+
+        // --- 2. Lines Config Database Configuration (NEW) ---
+        const linesFirebaseConfig = { databaseURL: "https://line01-2aec7-default-rtdb.asia-southeast1.firebasedatabase.app/" };
+        const appLines = initializeApp(linesFirebaseConfig, "AppLines"); // Secondary App Instance
+        const dbLines = getDatabase(appLines);
+
+        let currentOrders = {};
+        let dynamicLines = []; // Array to store fetched lines
+
+        window.navigate = function(page) {
+            document.querySelectorAll('.page-transition').forEach(el => el.classList.add('hide'));
+            document.getElementById('page-' + page).classList.remove('hide');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const target = btn.dataset.target;
+                btn.classList.remove('text-emerald-500', 'text-orange-500', 'text-blue-500', 'text-gray-400');
+                if(target === page) {
+                    if(target === 'assign') btn.classList.add('text-orange-500');
+                    else if(target === 'matrix') btn.classList.add('text-blue-500');
+                    else btn.classList.add('text-emerald-500');
+                } else {
+                    btn.classList.add('text-gray-400');
+                }
+            });
+            if(page === 'matrix') window.loadProductionMatrix();
+        }
+        navigate('home');
+
+        function showAlert(msg, type = 'info') {
+            const alertBox = document.getElementById('customAlert');
+            document.getElementById('alertMsg').innerText = msg;
+            document.getElementById('alertIcon').className = type === 'success' ? 'fas fa-check-circle text-2xl mr-3 text-emerald-400' : 
+                                  type === 'error' ? 'fas fa-exclamation-circle text-2xl mr-3 text-red-400' : 'fas fa-info-circle text-2xl mr-3 text-blue-400';
+            alertBox.classList.remove('-translate-y-24');
+            setTimeout(() => alertBox.classList.add('-translate-y-24'), 3000);
+        }
+
+        function toggleLoader(show) { document.getElementById('loader').classList[show ? 'remove' : 'add']('hide'); }
+
+        // --- Fetch Lines Dynamically from Second DB ---
+        onValue(ref(dbLines, 'lines'), (snap) => {
+            dynamicLines = [];
+            if(snap.exists()) {
+                const data = snap.val();
+                Object.keys(data).forEach(mac => {
+                    // Navigate through mac_address -> config -> line
+                    if(data[mac] && data[mac].config && data[mac].config.line) {
+                        const lineName = data[mac].config.line;
+                        if(!dynamicLines.includes(lineName)) {
+                            dynamicLines.push(lineName);
+                        }
+                    }
+                });
+                dynamicLines.sort(); // Sort Alphabetically
+            }
+        });
+
+        // 1. Load Products
+        onValue(ref(db, 'global_config/products'), (snap) => {
+            const select = document.getElementById('productSelect');
+            select.innerHTML = '<option value="">Select a Product</option>';
+            if(snap.exists()) {
+                const list = Array.isArray(snap.val()) ? snap.val() : Object.values(snap.val());
+                list.forEach(p => p && (select.innerHTML += `<option value="${typeof p === 'object' ? p.name : p}">${typeof p === 'object' ? p.name : p}</option>`));
+            }
+        });
+
+        // 2. Add Order
+        document.getElementById('saveOrderBtn').addEventListener('click', async () => {
+            const oNo = document.getElementById('orderNo').value.trim();
+            const cat = document.getElementById('category').value.trim().toUpperCase();
+            const prod = document.getElementById('productSelect').value;
+            const qty = document.getElementById('quantity').value.trim();
+
+            if (!/^\d{2}-\d{4}$/.test(oNo)) return showAlert('Order Number must be 26-1234 format', 'error');
+            if (!/^[A-Z]+$/.test(cat)) return showAlert('Category must be Block Capitals', 'error');
+            if (!prod) return showAlert('Select a product', 'error');
+            if (!qty || qty <= 0) return showAlert('Enter valid quantity', 'error');
+
+            const id = `${oNo.replace('-', '')}_${cat}`;
+            toggleLoader(true);
+            try {
+                await set(ref(db, `supervisor_data/orders/${id}`), {
+                    orderNumber: oNo, category: cat, product: prod, quantity: parseInt(qty), status: 'pending', timestamp: Date.now()
+                });
+                showAlert('Order Saved!', 'success');
+                ['orderNo','category','productSelect','quantity'].forEach(i => document.getElementById(i).value = '');
+                setTimeout(() => navigate('assign'), 1000);
+            } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
+        });
+
+        // 3. Listen & Display Orders
+        onValue(ref(db, 'supervisor_data/orders'), (snap) => {
+            currentOrders = snap.val() || {};
+            const assignList = document.getElementById('ordersList');
+            const compList = document.getElementById('completedList');
+            assignList.innerHTML = ''; compList.innerHTML = '';
+            
+            let pCount = 0, cCount = 0;
+
+            Object.keys(currentOrders).forEach(key => {
+                const order = currentOrders[key];
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden";
+                
+                const displayId = `${order.orderNumber} (${order.category})`;
+
+                if(order.status === 'completed') {
+                    cCount++;
+                    card.innerHTML = `
+                        <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                        <div class="flex justify-between items-center">
+                            <div><h3 class="font-bold text-gray-800 text-sm">${displayId}</h3><p class="text-[11px] text-gray-500">${order.product}</p></div>
+                            <div class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-check mr-1"></i>Done: ${order.quantity}</div>
+                        </div>`;
+                    compList.appendChild(card);
+                } else {
+                    pCount++;
+                    let borderColor = order.status === 'active' ? 'bg-emerald-500' : (order.status === 'hold' ? 'bg-orange-500' : 'bg-gray-300');
+                    
+                    let actionUI = '';
+                    if(order.status === 'pending') {
+                        // Dynamically create options from fetched Database Lines
+                        let opts = '<option value="" disabled selected>Select Line...</option>';
+                        if(dynamicLines.length > 0) {
+                            dynamicLines.forEach(line => {
+                                opts += `<option value="${line}">${line}</option>`;
+                            });
+                        } else {
+                            opts += `<option value="" disabled>Loading lines from server...</option>`;
+                        }
+
+                        actionUI = `
+                            <select id="line_${key}" class="flex-1 text-xs border rounded p-2 outline-none border-orange-200">${opts}</select>
+                            <button onclick="window.changeStatus('${key}', 'active')" class="bg-emerald-500 text-white px-3 py-2 rounded font-bold text-xs shadow">ACTIVE</button>`;
+                    } else if (order.status === 'active') {
+                        actionUI = `
+                            <div class="flex-1 text-xs font-bold text-emerald-600"><i class="fas fa-play-circle mr-1"></i> Running on ${order.assignedLine}</div>
+                            <button onclick="window.changeStatus('${key}', 'hold')" class="bg-orange-500 text-white px-3 py-2 rounded font-bold text-xs shadow">HOLD</button>`;
+                    } else if (order.status === 'hold') {
+                        actionUI = `
+                            <div class="flex-1 text-xs font-bold text-orange-600"><i class="fas fa-pause-circle mr-1"></i> Paused on ${order.assignedLine}</div>
+                            <button onclick="window.changeStatus('${key}', 'active', '${order.assignedLine}')" class="bg-emerald-500 text-white px-3 py-2 rounded font-bold text-xs shadow">RESUME</button>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="absolute top-0 left-0 w-1 h-full ${borderColor}"></div>
+                        <div class="flex justify-between items-start mb-2 pl-1">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm">${displayId}</h3>
+                                <p class="text-[11px] text-gray-500"><i class="fas fa-box text-orange-400 mr-1"></i> ${order.product}</p>
+                            </div>
+                            <div class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold">Target: ${order.quantity}</div>
+                        </div>
+                        <div class="mt-2 bg-gray-50 p-2 rounded-lg flex items-center gap-2 border border-gray-100">${actionUI}</div>`;
+                    assignList.appendChild(card);
+                }
+            });
+
+            document.getElementById('orderCount').innerText = `${pCount} In Progress`;
+            document.getElementById('compOrderCount').innerText = `${cCount} Completed`;
+            if(pCount===0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
+            if(cCount===0) compList.innerHTML = `<div class="text-center py-10 text-gray-400">No completed orders.</div>`;
+        });
+
+        // Change Status
+        window.changeStatus = async function(key, newStatus, forceLine = null) {
+            let targetLine = forceLine;
+            
+            if(newStatus === 'active') {
+                if(!targetLine) {
+                    const sel = document.getElementById(`line_${key}`);
+                    if(!sel || !sel.value) return showAlert('Select a line!', 'error');
+                    targetLine = sel.value;
+                }
+                let activeCount = Object.values(currentOrders).filter(o => o.status === 'active' && o.assignedLine === targetLine).length;
+                if(activeCount >= 3) return showAlert(`${targetLine} already has 3 active orders!`, 'error');
+            }
+
+            let updates = { status: newStatus };
+            if(targetLine) updates.assignedLine = targetLine;
+            if(newStatus === 'active' && !currentOrders[key].assignedTime) updates.assignedTime = Date.now();
+
+            toggleLoader(true);
+            try {
+                await update(ref(db, `supervisor_data/orders/${key}`), updates);
+                showAlert(`Order marked as ${newStatus.toUpperCase()}`, 'success');
+            } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
+        }
+
+        // 4. Matrix & Auto-Complete Logic
+        window.loadProductionMatrix = async function() {
+            const tbody = document.getElementById('matrixTableBody');
+            tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i> Syncing Data...</td></tr>`;
+
+            try {
+                const [ordersSnap, eventsSnap] = await Promise.all([ get(ref(db, 'supervisor_data/orders')), get(ref(db, 'production_events')) ]);
+                const orders = ordersSnap.val() || {};
+                const events = eventsSnap.val() || {};
+                
+                let orderProducedTotals = {}; Object.keys(orders).forEach(k => orderProducedTotals[k] = 0);
+                let matrixMap = {};
+
+                Object.values(events).forEach(ev => {
+                    const line = ev.lineName; const prod = ev.product;
+                    
+                    let matchedOrderId = "-"; let matchedOrderObj = null;
+                    for(let [oId, oData] of Object.entries(orders)) {
+                        if(oData.assignedLine === line && oData.product === prod && ev.timestamp >= (oData.assignedTime || 0)) {
+                            matchedOrderId = oId; matchedOrderObj = oData;
+                            orderProducedTotals[oId] += parseInt(ev.qty || 0);
+                            break;
+                        }
+                    }
+
+                    let displayOrderNo = matchedOrderObj ? `${matchedOrderObj.orderNumber} (${matchedOrderObj.category})` : "-";
+                    let mKey = `${ev.date}_${line}_${prod}_${matchedOrderId}`;
+                    
+                    if(!matrixMap[mKey]) matrixMap[mKey] = { date: ev.date, line: line, orderNo: displayOrderNo, product: prod, total: 0, hours: {} };
+                    
+                    let q = parseInt(ev.qty || 0);
+                    matrixMap[mKey].total += q;
+                    matrixMap[mKey].hours[ev.hour] = (matrixMap[mKey].hours[ev.hour] || 0) + q;
+                });
+
+                for(let [oId, oData] of Object.entries(orders)) {
+                    if(oData.status === 'active' && orderProducedTotals[oId] >= oData.quantity) {
+                        update(ref(db, `supervisor_data/orders/${oId}`), { status: 'completed', completedTime: Date.now() });
+                        showAlert(`Order ${oData.orderNumber} Auto-Completed!`, 'success');
+                    }
+                }
+
+                let sortedKeys = Object.keys(matrixMap).sort((a,b) => b.localeCompare(a));
+                tbody.innerHTML = '';
+                
+                if(sortedKeys.length === 0) return tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-gray-400">No hardware data found</td></tr>`;
+
+                sortedKeys.forEach(key => {
+                    const row = matrixMap[key];
+                    let tr = document.createElement('tr');
+                    
+                    let hourCells = '';
+                    for(let h=8; h<=17; h++) {
+                        let hrStr = h < 10 ? '0'+h : ''+h;
+                        let val = row.hours[hrStr];
+                        hourCells += val ? `<td class="px-2 py-3 text-center font-bold text-gray-800">${val}</td>` : `<td class="px-2 py-3 text-center text-gray-300">-</td>`;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td class="px-2 py-3 whitespace-nowrap bg-white sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <div class="text-[9px] text-gray-400">${row.date.substring(5)}</div>
+                            <div class="font-bold text-emerald-700">${row.line}</div>
+                        </td>
+                        <td class="px-2 py-3 font-bold text-orange-600 whitespace-nowrap">${row.orderNo}</td>
+                        <td class="px-2 py-3 text-gray-700 font-medium whitespace-nowrap truncate max-w-[120px]">${row.product}</td>
+                        <td class="px-2 py-3 font-bold text-emerald-700 text-center bg-emerald-50">${row.total}</td>
+                        ${hourCells}`;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) { tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-red-400">Error: ${error.message}</td></tr>`; }
+        };
+    </script>
+</body>
+</html>
