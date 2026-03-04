@@ -17,6 +17,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Scripts for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -248,13 +252,22 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Live
                         Matrix</h2>
-                    <button onclick="loadProductionMatrix()"
-                        class="text-xs bg-blue-100 text-blue-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
-                        <i class="fas fa-sync-alt mr-1"></i> Refresh
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="shareToWhatsApp('matrix')"
+                            class="text-xs bg-green-100 text-green-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
+                            <i class="fab fa-whatsapp mr-1"></i> Share
+                        </button>
+                        <button onclick="loadProductionMatrix()"
+                            class="text-xs bg-blue-100 text-blue-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                        </button>
+                    </div>
                 </div>
                 <!-- <p class="text-[11px] text-gray-500 mb-2 px-1">Horizontal scroll for hourly data.</p> -->
-                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                <div id="matrixExportArea"
+                    class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col p-1">
+                    <div class="mb-2 text-center text-gray-700 font-bold hidden" id="matrixExportTitle">Live Matrix
+                        Output</div>
                     <div class="overflow-x-auto custom-scrollbar flex-1 pb-2">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
@@ -362,41 +375,53 @@
                                 Report</button>
                         </div>
 
-                        <!-- Totals Summary Card -->
-                        <div class="grid grid-cols-2 gap-3 mb-4 shrink-0">
-                            <div
-                                class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200 text-center shadow-sm">
-                                <p class="text-[10px] text-emerald-600 font-bold uppercase mb-1">Total Output</p>
-                                <p id="reportTotalOutput" class="text-xl font-black text-emerald-800">0</p>
-                            </div>
-                            <div
-                                class="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200 text-center shadow-sm">
-                                <p class="text-[10px] text-blue-600 font-bold uppercase mb-1">Total Workers</p>
-                                <p id="reportTotalWorkers" class="text-xl font-black text-blue-800">0</p>
-                            </div>
+                        <div class="flex justify-end mb-2 shrink-0">
+                            <button onclick="shareToWhatsApp('report')"
+                                class="text-xs bg-green-100 text-green-600 py-1.5 px-3 rounded-lg font-bold shadow-sm active:scale-95 flex items-center">
+                                <i class="fab fa-whatsapp mr-1"></i> Share Report PDF
+                            </button>
                         </div>
 
-                        <!-- Data Table Container -->
-                        <div
-                            class="flex-1 min-h-[150px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                            <div class="overflow-auto custom-scrollbar flex-1">
-                                <table class="w-full text-left border-collapse">
-                                    <thead
-                                        class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
-                                        <tr>
-                                            <th class="px-3 py-2 border-b font-semibold">Date</th>
-                                            <th class="px-3 py-2 border-b font-semibold text-center">Output</th>
-                                            <th class="px-3 py-2 border-b font-semibold text-center">Workers</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="reportTableBody"
-                                        class="text-[12px] text-gray-700 divide-y divide-gray-100">
-                                        <tr>
-                                            <td colspan="3" class="text-center py-6 text-gray-400">Select Month & Line
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <div id="reportExportArea" class="flex flex-col flex-1 min-h-0 bg-white p-1">
+                            <div class="mb-3 text-center text-purple-700 font-bold hidden" id="reportExportTitle">
+                                Monthly Production Report</div>
+                            <!-- Totals Summary Card -->
+                            <div class="grid grid-cols-2 gap-3 mb-4 shrink-0">
+                                <div
+                                    class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200 text-center shadow-sm">
+                                    <p class="text-[10px] text-emerald-600 font-bold uppercase mb-1">Total Output</p>
+                                    <p id="reportTotalOutput" class="text-xl font-black text-emerald-800">0</p>
+                                </div>
+                                <div
+                                    class="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200 text-center shadow-sm">
+                                    <p class="text-[10px] text-blue-600 font-bold uppercase mb-1">Total Workers</p>
+                                    <p id="reportTotalWorkers" class="text-xl font-black text-blue-800">0</p>
+                                </div>
+                            </div>
+
+                            <!-- Data Table Container -->
+                            <div
+                                class="flex-1 min-h-[150px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                                <div class="overflow-auto custom-scrollbar flex-1">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead
+                                            class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
+                                            <tr>
+                                                <th class="px-3 py-2 border-b font-semibold">Date</th>
+                                                <th class="px-3 py-2 border-b font-semibold text-center">Output</th>
+                                                <th class="px-3 py-2 border-b font-semibold text-center">Workers</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="reportTableBody"
+                                            class="text-[12px] text-gray-700 divide-y divide-gray-100">
+                                            <tr>
+                                                <td colspan="3" class="text-center py-6 text-gray-400">Select Month &
+                                                    Line
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1051,11 +1076,99 @@
                 if (rows === '') tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-gray-400">No data for ${mMonth}</td></tr>`;
                 else tbody.innerHTML = rows;
 
+                document.getElementById('reportExportTitle').innerText = `Production Report | ${mMonth} | ${mLine}`;
+
             } catch (e) {
                 showAlert(e.message, 'error');
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-red-400">Error loading data</td></tr>`;
             }
         };
+
+        // --- NEW PDF & WhatsApp Sharing Logic ---
+        window.shareToWhatsApp = async function (type) {
+            const isMatrix = type === 'matrix';
+            const elementId = isMatrix ? 'matrixExportArea' : 'reportExportArea';
+            const titleId = isMatrix ? 'matrixExportTitle' : 'reportExportTitle';
+
+            const element = document.getElementById(elementId);
+            const titleEl = document.getElementById(titleId);
+
+            if (!element) return;
+
+            toggleLoader(true);
+            try {
+                // Temporarily show the title for the PDF
+                titleEl.classList.remove('hidden');
+
+                // Generate Canvas
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                // Hide the title again
+                titleEl.classList.add('hidden');
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF({
+                    orientation: isMatrix ? 'landscape' : 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                const pdfBlob = pdf.output('blob');
+
+                // Try to share using the Web Share API with files
+                if (navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], 'report.pdf', { type: 'application/pdf' })] })) {
+                    const file = new File([pdfBlob], isMatrix ? 'Live_Matrix.pdf' : 'Monthly_Report.pdf', { type: 'application/pdf' });
+                    try {
+                        await navigator.share({
+                            title: isMatrix ? 'Live Matrix Output' : 'Monthly Production Report',
+                            text: 'Please find the attached production data PDF.',
+                            files: [file]
+                        });
+                        showAlert('Shared successfully!', 'success');
+                    } catch (error) {
+                        console.log('Error sharing:', error);
+                        downloadAndFallback(pdfBlob, isMatrix);
+                    }
+                } else {
+                    // Fallback for browsers/devices that do not support Web Share API with files
+                    downloadAndFallback(pdfBlob, isMatrix);
+                }
+
+            } catch (error) {
+                console.error(error);
+                showAlert('Failed to generate PDF', 'error');
+            } finally {
+                toggleLoader(false);
+            }
+        };
+
+        function downloadAndFallback(blob, isMatrix) {
+            const fileName = isMatrix ? 'Live_Matrix.pdf' : 'Monthly_Report.pdf';
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            showAlert('PDF downloaded. Please attach it in WhatsApp.', 'info');
+
+            // Try to open WhatsApp
+            setTimeout(() => {
+                const text = encodeURIComponent('Please find the attached production data PDF which was just downloaded to your device.');
+                window.open(`whatsapp://send?text=${text}`, '_blank');
+            }, 1000);
+        }
 
         // --- NEW Testing Room Firebase Logic ---
         const badge = document.getElementById("testStatusBadge");
