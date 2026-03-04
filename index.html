@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="si">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,82 +9,224 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ECO App">
-    <title>Ecosolve Lightning - Production</title>
-    
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Ecosolve Production","short_name":"ECO","start_url":".","display":"standalone","background_color":"#f9fafb","theme_color":"#f97316","icons":[{"src":"https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png","sizes":"192x192","type":"image/png"}]}'>
-    
+    <title>Ecosolve Lightning - Production & Testing</title>
+
+    <link rel="manifest"
+        href='data:application/manifest+json,{"name":"Ecosolve Production","short_name":"ECO","start_url":".","display":"standalone","background_color":"#f9fafb","theme_color":"#f97316","icons":[{"src":"https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png","sizes":"192x192","type":"image/png"}]}'>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .hide { display: none !important; }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .page-transition { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f97316; border-radius: 10px; }
+
+        /* Changed to 100dvh for proper mobile height scaling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            height: 100dvh;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .page-transition {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #f97316;
+            border-radius: 10px;
+        }
+
+        /* --- Testing Room Gauge CSS --- */
+        .test-dark-card {
+            background: #12151c;
+            border: 1px solid #2a313e;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .gauge-container {
+            margin: 10px auto;
+            width: 100%;
+            max-width: 250px;
+            position: relative;
+        }
+
+        .needle {
+            transform-origin: 100px 100px;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes sweep {
+            0% {
+                transform: rotate(-45deg);
+            }
+
+            100% {
+                transform: rotate(45deg);
+            }
+        }
+
+        .sweeping {
+            animation: sweep 6s infinite alternate ease-in-out;
+        }
+
+        .s-badge {
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            border: 1px solid transparent;
+        }
+
+        .s-working {
+            background: rgba(63, 185, 80, 0.1);
+            color: #3fb950;
+            border-color: rgba(63, 185, 80, 0.4);
+            box-shadow: 0 0 10px rgba(63, 185, 80, 0.2);
+        }
+
+        .s-resting {
+            background: rgba(210, 153, 34, 0.1);
+            color: #d29922;
+            border-color: rgba(210, 153, 34, 0.4);
+        }
+
+        .s-error {
+            background: rgba(248, 81, 73, 0.1);
+            color: #f85149;
+            border-color: rgba(248, 81, 73, 0.4);
+            animation: blink 1s infinite;
+        }
+
+        .s-offline {
+            background: #21262d;
+            color: #8b949e;
+            border-color: #30363d;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.6;
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden flex justify-center">
+
+<body class="bg-gray-100 text-gray-800 overflow-hidden flex justify-center">
 
     <div class="w-full max-w-md h-full bg-gray-50 flex flex-col relative shadow-2xl overflow-hidden">
-        
-        <header class="bg-gradient-to-r from-emerald-600 to-orange-500 text-white pt-8 pb-4 px-6 shadow-md z-10 rounded-b-3xl">
+
+        <header
+            class="bg-gradient-to-r from-emerald-600 to-orange-500 text-white pt-8 pb-4 px-6 shadow-md z-10 rounded-b-3xl">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide">ECOSOLVE</h1>
-                    <p class="text-xs text-orange-100">Production Management</p>
+                <div class="flex items-center gap-3">
+                    <button onclick="navigate('settings')"
+                        class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                        <i class="fas fa-cog text-white text-sm"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-wide">ECOSOLVE</h1>
+                        <p class="text-xs text-orange-100" id="header-subtitle">Production Management</p>
+                    </div>
                 </div>
-                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border-2 border-white p-1">
-                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png" alt="Ecosolve Logo" class="w-full h-full object-contain">
+                <div
+                    class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden border-2 border-white p-1">
+                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png"
+                        alt="Ecosolve Logo" class="w-full h-full object-contain">
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 pb-24 z-0 custom-scrollbar" id="main-content">
-            
+        <main class="flex-1 overflow-y-auto p-4 pb-24 z-0 custom-scrollbar relative" id="main-content">
+
             <div id="page-home" class="page-transition h-full flex flex-col justify-center items-center text-center">
-                <div class="w-36 h-36 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-6 p-4 border border-orange-100">
-                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png" alt="Logo" class="w-full object-contain">
+                <div
+                    class="w-36 h-36 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-6 p-4 border border-orange-100">
+                    <img src="https://www.ecosolve.lk/wp-content/uploads/2026/02/Eco-Solve-Lighting-Logo-min.png"
+                        alt="Logo" class="w-full object-contain">
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome Supervisor</h2>
-                <p class="text-gray-500 text-sm mb-8 px-4">Manage orders, control production lines, and track live hardware data.</p>
+                <p class="text-gray-500 text-sm mb-8 px-4">Manage orders, control production lines, and monitor testing
+                    rooms.</p>
                 <div class="grid grid-cols-2 gap-3 w-full max-w-[280px]">
-                    <button onclick="navigate('add')" class="bg-emerald-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-emerald-600 transition-all flex flex-col items-center">
+                    <button onclick="navigate('add')"
+                        class="bg-emerald-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-emerald-600 transition-all flex flex-col items-center">
                         <i class="fas fa-plus mb-1 text-lg"></i> Add Order
                     </button>
-                    <button onclick="navigate('assign')" class="bg-orange-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-orange-600 transition-all flex flex-col items-center">
-                        <i class="fas fa-network-wired mb-1 text-lg"></i> Assign
+                    <!-- Changed testing tab button based on new code -->
+                    <button onclick="navigate('testing')"
+                        class="bg-red-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-red-600 transition-all flex flex-col items-center">
+                        <i class="fas fa-bolt mb-1 text-lg"></i> Test Room
+                    </button>
+                    <button onclick="navigate('daily')"
+                        class="bg-purple-500 text-white py-3 rounded-2xl font-semibold shadow hover:bg-purple-600 transition-all flex flex-col items-center col-span-2 mt-1">
+                        <i class="fas fa-chart-line mb-1 text-lg"></i> Daily Output
                     </button>
                 </div>
             </div>
 
             <div id="page-add" class="page-transition hide">
-                <h2 class="text-xl font-bold mb-4 text-gray-700"><i class="fas fa-plus-circle text-orange-500 mr-2"></i>Add New Order</h2>
+                <h2 class="text-xl font-bold mb-4 text-gray-700"><i
+                        class="fas fa-plus-circle text-orange-500 mr-2"></i>Add New Order</h2>
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-orange-100">
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Order Number (Format: 26-1234)</label>
-                        <input type="text" id="orderNo" placeholder="26-1234" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 transition-colors bg-transparent">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Order Number (Format:
+                            26-1234)</label>
+                        <input type="text" id="orderNo" placeholder="26-1234"
+                            class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 bg-transparent">
                     </div>
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-gray-500 mb-1">Category (Block Capitals)</label>
-                        <input type="text" id="category" placeholder="e.g. A, B, MAIN" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 uppercase transition-colors bg-transparent">
+                        <input type="text" id="category" placeholder="e.g. A, B, MAIN"
+                            class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 uppercase bg-transparent">
                     </div>
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-gray-500 mb-1">Product</label>
-                        <select id="productSelect" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 bg-transparent text-gray-700">
+                        <select id="productSelect"
+                            class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 bg-transparent text-gray-700">
                             <option value="">Loading products...</option>
                         </select>
                     </div>
                     <div class="mb-6">
                         <label class="block text-xs font-semibold text-gray-500 mb-1">Quantity</label>
-                        <input type="number" id="quantity" placeholder="0" class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 transition-colors bg-transparent">
+                        <input type="number" id="quantity" placeholder="0"
+                            class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-orange-500 bg-transparent">
                     </div>
-                    
-                    <button id="saveOrderBtn" class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-orange-600 active:scale-95 transition-all flex justify-center items-center">
+
+                    <button id="saveOrderBtn"
+                        class="w-full bg-orange-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-orange-600 active:scale-95 transition-all flex justify-center items-center">
                         <i class="fas fa-save mr-2"></i> Save Order
                     </button>
                 </div>
@@ -91,8 +234,10 @@
 
             <div id="page-assign" class="page-transition hide">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-tasks text-emerald-500 mr-2"></i>Control Orders</h2>
-                    <span class="text-xs bg-orange-100 text-orange-700 py-1 px-3 rounded-full font-bold" id="orderCount">0 Pending</span>
+                    <h2 class="text-xl font-bold text-gray-700"><i
+                            class="fas fa-tasks text-emerald-500 mr-2"></i>Control Orders</h2>
+                    <span class="text-xs bg-orange-100 text-orange-700 py-1 px-3 rounded-full font-bold"
+                        id="orderCount">0 Pending</span>
                 </div>
                 <div id="ordersList" class="space-y-4 pb-10">
                     <div class="text-center text-gray-400 py-10">Loading orders...</div>
@@ -101,73 +246,385 @@
 
             <div id="page-matrix" class="page-transition hide h-full flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Live Matrix</h2>
-                    <button onclick="loadProductionMatrix()" class="text-xs bg-blue-100 text-blue-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
+                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-chart-bar text-blue-500 mr-2"></i>Live
+                        Matrix</h2>
+                    <button onclick="loadProductionMatrix()"
+                        class="text-xs bg-blue-100 text-blue-600 py-1 px-3 rounded-full font-bold shadow-sm active:scale-95">
                         <i class="fas fa-sync-alt mr-1"></i> Refresh
                     </button>
                 </div>
-                <p class="text-[11px] text-gray-500 mb-2 px-1">Horizontal scroll for hourly data.</p>
+                <!-- <p class="text-[11px] text-gray-500 mb-2 px-1">Horizontal scroll for hourly data.</p> -->
                 <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                     <div class="overflow-x-auto custom-scrollbar flex-1 pb-2">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
                                 <tr>
-                                    <th class="px-2 py-3 border-b font-semibold bg-gray-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Line</th>
-                                    <th class="px-2 py-3 border-b font-semibold min-w-[90px] text-orange-600">Order No</th>
+                                    <th
+                                        class="px-2 py-3 border-b font-semibold bg-gray-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                        Line</th>
+                                    <th class="px-2 py-3 border-b font-semibold min-w-[90px] text-orange-600">Order No
+                                    </th>
                                     <th class="px-2 py-3 border-b font-semibold min-w-[110px]">Product</th>
                                     <th class="px-2 py-3 border-b font-bold text-emerald-600 text-center">TOTAL</th>
-                                    <th class="px-2 py-3 border-b text-center">08:00</th><th class="px-2 py-3 border-b text-center">09:00</th>
-                                    <th class="px-2 py-3 border-b text-center">10:00</th><th class="px-2 py-3 border-b text-center">11:00</th>
-                                    <th class="px-2 py-3 border-b text-center">12:00</th><th class="px-2 py-3 border-b text-center">13:00</th>
-                                    <th class="px-2 py-3 border-b text-center">14:00</th><th class="px-2 py-3 border-b text-center">15:00</th>
-                                    <th class="px-2 py-3 border-b text-center">16:00</th><th class="px-2 py-3 border-b text-center">17:00</th>
+                                    <th class="px-2 py-3 border-b text-center">08:00</th>
+                                    <th class="px-2 py-3 border-b text-center">09:00</th>
+                                    <th class="px-2 py-3 border-b text-center">10:00</th>
+                                    <th class="px-2 py-3 border-b text-center">11:00</th>
+                                    <th class="px-2 py-3 border-b text-center">12:00</th>
+                                    <th class="px-2 py-3 border-b text-center">13:00</th>
+                                    <th class="px-2 py-3 border-b text-center">14:00</th>
+                                    <th class="px-2 py-3 border-b text-center">15:00</th>
+                                    <th class="px-2 py-3 border-b text-center">16:00</th>
+                                    <th class="px-2 py-3 border-b text-center">17:00</th>
+                                    <th class="px-2 py-3 border-b text-center">18:00</th>
                                 </tr>
                             </thead>
                             <tbody id="matrixTableBody" class="text-[11px] text-gray-700 divide-y divide-gray-100">
-                                <tr><td colspan="14" class="text-center py-8 text-gray-400">Loading matrix...</td></tr>
+                                <tr>
+                                    <td colspan="14" class="text-center py-8 text-gray-400">Loading matrix...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <div id="page-completed" class="page-transition hide">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-check-double text-emerald-500 mr-2"></i>Completed</h2>
-                    <span class="text-xs bg-emerald-100 text-emerald-700 py-1 px-3 rounded-full font-bold" id="compOrderCount">0 Done</span>
+            <!-- NEW SUPERVISOR DAILY OUTPUT TAB -->
+            <div id="page-daily" class="page-transition hide flex flex-col h-full">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <h2 class="text-xl font-bold text-purple-700"><i
+                            class="fas fa-clipboard-list text-purple-500 mr-2"></i>Daily Output</h2>
                 </div>
-                <div id="completedList" class="space-y-3 pb-10">
-                    <div class="text-center text-gray-400 py-10">No completed orders yet.</div>
+
+                <!-- Sub-tab Navigation -->
+                <div class="flex bg-gray-200 rounded-lg p-1 mb-4 text-xs font-semibold shrink-0">
+                    <button onclick="switchDailyTab('entry')" id="daily-tab-entry"
+                        class="flex-1 py-2 text-center rounded-md bg-white text-purple-700 shadow-sm transition-all focus:outline-none">Data
+                        Entry</button>
+                    <button onclick="switchDailyTab('report')" id="daily-tab-report"
+                        class="flex-1 py-2 text-center rounded-md text-gray-600 transition-all focus:outline-none">M.
+                        Report</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto pb-6">
+                    <!-- Daily Data Entry Form -->
+                    <div id="daily-sec-entry" class="bg-white p-5 rounded-2xl shadow-sm border border-purple-100">
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+                            <input type="date" id="dailyDate"
+                                class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Production Line</label>
+                            <select id="dailyLineSelect"
+                                class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                                <option value="" disabled selected>Select Line...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-4 grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Total Output</label>
+                                <input type="number" id="dailyOutput" placeholder="0"
+                                    class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">Workers Count</label>
+                                <input type="number" id="dailyWorkers" placeholder="0"
+                                    class="w-full border-b-2 border-gray-200 py-2 focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                            </div>
+                        </div>
+                        <button id="saveDailyBtn"
+                            class="w-full bg-purple-500 text-white py-3 rounded-xl font-bold shadow-md hover:bg-purple-600 active:scale-95 transition-all flex justify-center items-center mt-2">
+                            <i class="fas fa-save mr-2"></i> Save Output
+                        </button>
+                    </div>
+
+                    <!-- Monthly Report View -->
+                    <div id="daily-sec-report" class="hide flex flex-col h-full">
+                        <div
+                            class="bg-white p-4 rounded-xl shadow-sm border border-purple-100 mb-4 grid grid-cols-2 gap-3 shrink-0">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 mb-1">Month</label>
+                                <input type="month" id="reportMonth"
+                                    class="w-full border-b border-gray-200 py-1 text-xs focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-gray-500 mb-1">Line</label>
+                                <select id="reportLineSelect"
+                                    class="w-full border-b border-gray-200 py-1 text-xs focus:outline-none focus:border-purple-500 bg-transparent text-gray-700">
+                                    <option value="" disabled selected>Select Line...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <button onclick="generateMonthlyReport()"
+                                class="col-span-2 bg-purple-100 text-purple-700 py-2 rounded-lg text-xs font-bold hover:bg-purple-200 transition-colors">Generate
+                                Report</button>
+                        </div>
+
+                        <!-- Totals Summary Card -->
+                        <div class="grid grid-cols-2 gap-3 mb-4 shrink-0">
+                            <div
+                                class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200 text-center shadow-sm">
+                                <p class="text-[10px] text-emerald-600 font-bold uppercase mb-1">Total Output</p>
+                                <p id="reportTotalOutput" class="text-xl font-black text-emerald-800">0</p>
+                            </div>
+                            <div
+                                class="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200 text-center shadow-sm">
+                                <p class="text-[10px] text-blue-600 font-bold uppercase mb-1">Total Workers</p>
+                                <p id="reportTotalWorkers" class="text-xl font-black text-blue-800">0</p>
+                            </div>
+                        </div>
+
+                        <!-- Data Table Container -->
+                        <div
+                            class="flex-1 min-h-[150px] bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                            <div class="overflow-auto custom-scrollbar flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead
+                                        class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
+                                        <tr>
+                                            <th class="px-3 py-2 border-b font-semibold">Date</th>
+                                            <th class="px-3 py-2 border-b font-semibold text-center">Output</th>
+                                            <th class="px-3 py-2 border-b font-semibold text-center">Workers</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportTableBody"
+                                        class="text-[12px] text-gray-700 divide-y divide-gray-100">
+                                        <tr>
+                                            <td colspan="3" class="text-center py-6 text-gray-400">Select Month & Line
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <!-- UPDATED PAGE TESTING (REPLACING PAGE-POWER) -->
+            <div id="page-testing" class="page-transition hide h-full flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-bold text-red-600"><i class="fas fa-bolt text-red-500 mr-2"></i>High Volt
+                        Test</h2>
+                    <span id="testStatusBadge" class="s-badge s-offline text-[10px] mb-0 px-2 py-1">CONNECTING...</span>
+                </div>
+
+                <div class="test-dark-card p-4 mt-2 text-center flex-1 flex flex-col justify-between overflow-y-auto">
+                    <div class="gauge-container shrink-0">
+                        <svg viewBox="0 0 200 120" width="100%">
+                            <path d="M 43.5 43.5 A 80 80 0 0 1 156.5 43.5" fill="none" stroke="#21262d"
+                                stroke-width="12" stroke-linecap="round" />
+                            <path id="activeArc" d="M 43.5 43.5 A 80 80 0 0 1 156.5 43.5" fill="none" stroke="#3fb950"
+                                stroke-width="4" stroke-linecap="round" opacity="0.5" />
+                            <text x="35" y="65" fill="#8b949e" font-size="10" font-weight="bold"
+                                text-anchor="middle">180V</text>
+                            <text x="165" y="65" fill="#8b949e" font-size="10" font-weight="bold"
+                                text-anchor="middle">270V</text>
+                            <circle cx="43.5" cy="43.5" r="4" fill="#f85149" />
+                            <circle cx="156.5" cy="43.5" r="4" fill="#f85149" />
+                            <g id="dialNeedle" class="needle" style="transform: rotate(0deg);">
+                                <line x1="100" y1="100" x2="100" y2="25" stroke="#58a6ff" stroke-width="3"
+                                    stroke-linecap="round" />
+                                <circle cx="100" cy="100" r="6" fill="#58a6ff" />
+                                <circle cx="100" cy="100" r="2" fill="#12151c" />
+                            </g>
+                        </svg>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-lg p-3 text-left border-l-4 border-blue-500 mb-4 shrink-0">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-gray-400 text-xs">System Event:</p>
+                            <div class="flex gap-2">
+                                <span id="espStatusBadge"
+                                    class="s-badge s-offline text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent">ESP
+                                    WAIT</span>
+                                <span id="arduinoStatusBadge"
+                                    class="s-badge s-offline text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent">MCU
+                                    WAIT</span>
+                            </div>
+                        </div>
+                        <p id="testLastMsg" class="text-white text-sm font-semibold truncate">Waiting for data...</p>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-lg p-3 shrink-0">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-xs text-gray-300">Work Time (Sec):</label>
+                            <input type="number" id="testOnTime"
+                                class="bg-gray-900 border border-gray-700 text-blue-400 px-2 py-1 rounded w-16 text-center text-sm outline-none">
+                        </div>
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-xs text-gray-300">Rest Time (Sec):</label>
+                            <input type="number" id="testOffTime"
+                                class="bg-gray-900 border border-gray-700 text-blue-400 px-2 py-1 rounded w-16 text-center text-sm outline-none">
+                        </div>
+                        <button onclick="updateTestSettings()" id="testUpdateBtn"
+                            class="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-500 transition-colors">
+                            UPDATE CYCLES
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB (PASSWORDS) -->
+            <div id="page-settings" class="page-transition hide flex flex-col h-full">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-user-shield text-gray-500 mr-2"></i>App
+                        Security</h2>
+                </div>
+
+                <div class="flex-1 overflow-y-auto pb-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                        <p class="text-[11px] text-gray-500 mb-4 bg-gray-50 p-2 rounded border border-gray-100">Set
+                            passwords for individual tabs. Leave blank to keep a tab unprotected.</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-home w-4"></i> Home Tab</label>
+                                <input type="number" id="pass_home" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-plus-square w-4"></i> Add Order Tab</label>
+                                <input type="number" id="pass_add" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-tasks w-4"></i> Control Orders Tab</label>
+                                <input type="number" id="pass_assign" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-chart-pie w-4"></i> Matrix Tab</label>
+                                <input type="number" id="pass_matrix" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-bolt w-4"></i> Test Room Tab</label>
+                                <input type="number" id="pass_testing" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"><i
+                                        class="fas fa-chart-line w-4"></i> Daily Output Tab</label>
+                                <input type="number" id="pass_daily" placeholder="No Password"
+                                    class="w-full border-b border-gray-200 py-1.5 focus:outline-none focus:border-gray-500 bg-transparent text-gray-700 text-sm">
+                            </div>
+                        </div>
+
+                        <button onclick="saveTabPasswords()"
+                            class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold shadow-md hover:bg-gray-700 active:scale-95 transition-all flex justify-center items-center mt-6">
+                            <i class="fas fa-save mr-2"></i> Save Passwords
+                        </button>
+                    </div>
                 </div>
             </div>
 
         </main>
 
-        <div id="loader" class="absolute inset-0 bg-white bg-opacity-80 z-50 flex flex-col justify-center items-center hide glass-effect">
+        <div id="loader"
+            class="absolute inset-0 bg-white bg-opacity-80 z-50 flex flex-col justify-center items-center hide glass-effect">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-200 border-t-orange-500 mb-3"></div>
             <p class="text-orange-600 font-medium text-sm">Processing...</p>
         </div>
-        <div id="customAlert" class="absolute top-4 left-4 right-4 bg-gray-800 text-white p-4 rounded-xl shadow-2xl z-50 transform -translate-y-24 transition-transform duration-300 flex items-center">
+
+        <div id="customAlert"
+            class="absolute top-4 left-4 right-4 bg-gray-800 text-white p-4 rounded-xl shadow-2xl z-50 transform -translate-y-24 transition-transform duration-300 flex items-center">
             <i id="alertIcon" class="fas fa-info-circle text-2xl mr-3 text-blue-400"></i>
             <span id="alertMsg" class="font-medium text-sm">Message</span>
         </div>
 
+        <!-- PASSWORD PROMPT MODAL -->
+        <div id="passwordModal"
+            class="absolute inset-0 bg-gray-900 bg-opacity-60 z-[60] flex flex-col justify-center items-center hide backdrop-blur-sm">
+            <div class="bg-white p-6 rounded-3xl shadow-2xl w-11/12 max-w-[320px] transform transition-all scale-100">
+                <div class="text-center mb-5">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-lock text-red-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">Authentication Required</h3>
+                    <p class="text-xs text-gray-500 mt-1">Enter PIN to access this section.</p>
+                </div>
+
+                <input type="password" id="modalPinInput" pattern="[0-9]*" inputmode="numeric"
+                    class="w-full text-center text-2xl tracking-[0.5em] font-bold border-b-2 border-gray-300 py-2 mb-6 focus:outline-none focus:border-emerald-500 transition-colors"
+                    placeholder="****">
+
+                <div class="flex gap-3">
+                    <button onclick="closePasswordModal()"
+                        class="flex-1 py-3 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all">Cancel</button>
+                    <button onclick="submitPasswordModal()"
+                        class="flex-1 py-3 rounded-xl font-bold text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all">Unlock</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALWAYS USING INLINE SVGs FOR BOTTOM NAV TO FIX MISSING APP ICONS ON PHONE BROWSER -->
         <nav class="absolute bottom-0 w-full glass-effect border-t border-gray-200 pb-safe z-20">
-            <div class="flex justify-between items-center px-2 py-2">
-                <button onclick="navigate('home')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="home">
-                    <i class="fas fa-home text-lg mb-1"></i><span class="text-[9px] font-medium">Home</span>
+            <div class="flex justify-between items-center px-1 py-1">
+                <button onclick="navigate('home')"
+                    class="nav-btn flex flex-col items-center p-1.5 text-gray-400 hover:text-emerald-500 flex-1 min-w-0"
+                    data-target="home">
+                    <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z">
+                        </path>
+                    </svg>
+                    <span class="text-[8px] font-medium truncate w-full text-center">Home</span>
                 </button>
-                <button onclick="navigate('add')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="add">
-                    <i class="fas fa-plus-square text-lg mb-1"></i><span class="text-[9px] font-medium">Add</span>
+                <button onclick="navigate('add')"
+                    class="nav-btn flex flex-col items-center p-1.5 text-gray-400 hover:text-emerald-500 flex-1 min-w-0"
+                    data-target="add">
+                    <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-[8px] font-medium truncate w-full text-center">Add</span>
                 </button>
-                <button onclick="navigate('assign')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-orange-500 flex-1" data-target="assign">
-                    <i class="fas fa-sliders-h text-lg mb-1"></i><span class="text-[9px] font-medium">Control</span>
+                <button onclick="navigate('assign')"
+                    class="nav-btn flex flex-col items-center p-1.5 text-gray-400 hover:text-orange-500 flex-1 min-w-0"
+                    data-target="assign">
+                    <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                        </path>
+                    </svg>
+                    <span class="text-[8px] font-medium truncate w-full text-center">Control</span>
                 </button>
-                <button onclick="navigate('matrix')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-blue-500 flex-1" data-target="matrix">
-                    <i class="fas fa-chart-pie text-lg mb-1"></i><span class="text-[9px] font-medium">Matrix</span>
+                <button onclick="navigate('matrix')"
+                    class="nav-btn flex flex-col items-center p-1.5 text-gray-400 hover:text-blue-500 flex-1 min-w-0"
+                    data-target="matrix">
+                    <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z">
+                        </path>
+                    </svg>
+                    <span class="text-[8px] font-medium truncate w-full text-center">Matrix</span>
                 </button>
-                <button onclick="navigate('completed')" class="nav-btn flex flex-col items-center p-1 text-gray-400 hover:text-emerald-500 flex-1" data-target="completed">
-                    <i class="fas fa-check-double text-lg mb-1"></i><span class="text-[9px] font-medium">Done</span>
+                <button onclick="navigate('testing')"
+                    class="nav-btn flex flex-col items-center p-1.5 text-gray-400 hover:text-red-500 flex-1 min-w-0"
+                    data-target="testing">
+                    <svg class="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-[8px] font-medium truncate w-full text-center">Test RM</span>
                 </button>
             </div>
         </nav>
@@ -185,35 +642,103 @@
         // --- 2. Lines Config Database Configuration (NEW) ---
         const linesFirebaseConfig = { databaseURL: "https://line01-2aec7-default-rtdb.asia-southeast1.firebasedatabase.app/" };
         const appLines = initializeApp(linesFirebaseConfig, "AppLines"); // Secondary App Instance
-        const dbLines = getDatabase(appLines);
+        const dbLines = getDatabase(appLines); // Fixes ReferenceError
+        let hardwareLines = []; // Lines from hardware db
+        let dynamicLines = []; // Combined
+        let tabPasswords = {}; // Stored tab passwords
+        let pendingNavigation = null;
 
-        let currentOrders = {};
-        let dynamicLines = []; // Array to store fetched lines
+        // Fetch Tab Passwords
+        onValue(ref(db, 'supervisor_data/app_settings/tab_passwords'), (snap) => {
+            tabPasswords = snap.val() || {};
 
-        window.navigate = function(page) {
+            // Auto-populate settings UI
+            ['home', 'add', 'assign', 'matrix', 'testing', 'daily'].forEach(tab => {
+                if (document.getElementById(`pass_${tab}`)) {
+                    document.getElementById(`pass_${tab}`).value = tabPasswords[tab] || '';
+                }
+            });
+        });
+
+        // Save Tab Passwords from UI
+        window.saveTabPasswords = async function () {
+            let updates = {};
+            ['home', 'add', 'assign', 'matrix', 'testing', 'daily'].forEach(tab => {
+                let v = document.getElementById(`pass_${tab}`).value.trim();
+                if (v) updates[tab] = v;
+            });
+
+            toggleLoader(true);
+            try {
+                // Completely replace to allow clearing passwords
+                await set(ref(db, 'supervisor_data/app_settings/tab_passwords'), updates);
+                showAlert('Passwords Updated!', 'success');
+            } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
+        };
+
+        window.navigate = function (page, bypassAuth = false) {
+            // Check Password Logic FIRST
+            if (!bypassAuth && tabPasswords[page]) {
+                pendingNavigation = page;
+                document.getElementById('modalPinInput').value = '';
+                document.getElementById('passwordModal').classList.remove('hide');
+                setTimeout(() => document.getElementById('modalPinInput').focus(), 100);
+                return; // Stop navigation until authenticated
+            }
+
             document.querySelectorAll('.page-transition').forEach(el => el.classList.add('hide'));
             document.getElementById('page-' + page).classList.remove('hide');
-            
+
+            // Header Logic
+            if (page === 'testing') document.getElementById('header-subtitle').innerText = "High Voltage Testing";
+            else if (page === 'daily') document.getElementById('header-subtitle').innerText = "Daily Reports";
+            else if (page === 'settings') document.getElementById('header-subtitle').innerText = "App Security";
+            else document.getElementById('header-subtitle').innerText = "Production Management";
+
+            // Navbar Formatting
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 const target = btn.dataset.target;
-                btn.classList.remove('text-emerald-500', 'text-orange-500', 'text-blue-500', 'text-gray-400');
-                if(target === page) {
-                    if(target === 'assign') btn.classList.add('text-orange-500');
-                    else if(target === 'matrix') btn.classList.add('text-blue-500');
+                btn.classList.remove('text-emerald-500', 'text-orange-500', 'text-blue-500', 'text-red-500', 'text-yellow-500', 'text-purple-500', 'text-gray-400');
+                if (target === page) {
+                    if (target === 'assign') btn.classList.add('text-orange-500');
+                    else if (target === 'matrix') btn.classList.add('text-blue-500');
+                    else if (target === 'testing') btn.classList.add('text-red-500');
+                    else if (target === 'daily') btn.classList.add('text-purple-500');
                     else btn.classList.add('text-emerald-500');
                 } else {
                     btn.classList.add('text-gray-400');
                 }
             });
-            if(page === 'matrix') window.loadProductionMatrix();
+            if (page === 'matrix') window.loadProductionMatrix();
         }
-        navigate('home');
+        navigate('home', true);
+
+        // Security Modal Handlers
+        window.closePasswordModal = function () {
+            document.getElementById('passwordModal').classList.add('hide');
+            pendingNavigation = null;
+        }
+
+        window.submitPasswordModal = function () {
+            if (!pendingNavigation) return;
+            const input = document.getElementById('modalPinInput').value.trim();
+            const correct = tabPasswords[pendingNavigation];
+
+            if (input === correct) {
+                document.getElementById('passwordModal').classList.add('hide');
+                navigate(pendingNavigation, true); // Bypass auth this time
+                pendingNavigation = null;
+            } else {
+                showAlert('Incorrect PIN!', 'error');
+                document.getElementById('modalPinInput').value = '';
+            }
+        }
 
         function showAlert(msg, type = 'info') {
             const alertBox = document.getElementById('customAlert');
             document.getElementById('alertMsg').innerText = msg;
-            document.getElementById('alertIcon').className = type === 'success' ? 'fas fa-check-circle text-2xl mr-3 text-emerald-400' : 
-                                  type === 'error' ? 'fas fa-exclamation-circle text-2xl mr-3 text-red-400' : 'fas fa-info-circle text-2xl mr-3 text-blue-400';
+            document.getElementById('alertIcon').className = type === 'success' ? 'fas fa-check-circle text-2xl mr-3 text-emerald-400' :
+                type === 'error' ? 'fas fa-exclamation-circle text-2xl mr-3 text-red-400' : 'fas fa-info-circle text-2xl mr-3 text-blue-400';
             alertBox.classList.remove('-translate-y-24');
             setTimeout(() => alertBox.classList.add('-translate-y-24'), 3000);
         }
@@ -221,28 +746,43 @@
         function toggleLoader(show) { document.getElementById('loader').classList[show ? 'remove' : 'add']('hide'); }
 
         // --- Fetch Lines Dynamically from Second DB ---
-        onValue(ref(dbLines, 'lines'), (snap) => {
+        onValue(ref(dbLines, 'master/lines'), (snap) => {
             dynamicLines = [];
-            if(snap.exists()) {
+            if (snap.exists()) {
                 const data = snap.val();
-                Object.keys(data).forEach(mac => {
-                    // Navigate through mac_address -> config -> line
-                    if(data[mac] && data[mac].config && data[mac].config.line) {
-                        const lineName = data[mac].config.line;
-                        if(!dynamicLines.includes(lineName)) {
+                Object.keys(data).forEach(key => {
+                    const lineData = data[key];
+                    if (lineData && lineData.name) {
+                        const lineName = lineData.name;
+                        if (!dynamicLines.includes(lineName)) {
                             dynamicLines.push(lineName);
                         }
                     }
                 });
-                dynamicLines.sort(); // Sort Alphabetically
+                dynamicLines.sort();
             }
+            updateAllLineSelects();
         });
+
+        function updateAllLineSelects() {
+            let allLines = [...dynamicLines];
+            ['dailyLineSelect', 'reportLineSelect'].forEach(id => {
+                let el = document.getElementById(id);
+                if (el) {
+                    let current = el.value;
+                    el.innerHTML = '<option value="" disabled selected>Select Line...</option>';
+                    allLines.forEach(l => el.innerHTML += `<option value="${l}">${l}</option>`);
+                    if (allLines.includes(current)) el.value = current;
+                }
+            });
+            if (typeof renderOrders === 'function') renderOrders();
+        }
 
         // 1. Load Products
         onValue(ref(db, 'global_config/products'), (snap) => {
             const select = document.getElementById('productSelect');
             select.innerHTML = '<option value="">Select a Product</option>';
-            if(snap.exists()) {
+            if (snap.exists()) {
                 const list = Array.isArray(snap.val()) ? snap.val() : Object.values(snap.val());
                 list.forEach(p => p && (select.innerHTML += `<option value="${typeof p === 'object' ? p.name : p}">${typeof p === 'object' ? p.name : p}</option>`));
             }
@@ -267,50 +807,42 @@
                     orderNumber: oNo, category: cat, product: prod, quantity: parseInt(qty), status: 'pending', timestamp: Date.now()
                 });
                 showAlert('Order Saved!', 'success');
-                ['orderNo','category','productSelect','quantity'].forEach(i => document.getElementById(i).value = '');
+                ['orderNo', 'category', 'productSelect', 'quantity'].forEach(i => document.getElementById(i).value = '');
                 setTimeout(() => navigate('assign'), 1000);
             } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
         });
 
         // 3. Listen & Display Orders
-        onValue(ref(db, 'supervisor_data/orders'), (snap) => {
-            currentOrders = snap.val() || {};
+        let currentOrders = {};
+
+        window.renderOrders = function () {
             const assignList = document.getElementById('ordersList');
-            const compList = document.getElementById('completedList');
-            assignList.innerHTML = ''; compList.innerHTML = '';
-            
-            let pCount = 0, cCount = 0;
+            if (!assignList) return;
+            assignList.innerHTML = '';
+
+            let pCount = 0;
+            const allAvailableLines = [...dynamicLines];
 
             Object.keys(currentOrders).forEach(key => {
                 const order = currentOrders[key];
                 const card = document.createElement('div');
                 card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden";
-                
+
                 const displayId = `${order.orderNumber} (${order.category})`;
 
-                if(order.status === 'completed') {
-                    cCount++;
-                    card.innerHTML = `
-                        <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                        <div class="flex justify-between items-center">
-                            <div><h3 class="font-bold text-gray-800 text-sm">${displayId}</h3><p class="text-[11px] text-gray-500">${order.product}</p></div>
-                            <div class="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-check mr-1"></i>Done: ${order.quantity}</div>
-                        </div>`;
-                    compList.appendChild(card);
-                } else {
+                if (order.status !== 'completed') {
                     pCount++;
                     let borderColor = order.status === 'active' ? 'bg-emerald-500' : (order.status === 'hold' ? 'bg-orange-500' : 'bg-gray-300');
-                    
+
                     let actionUI = '';
-                    if(order.status === 'pending') {
-                        // Dynamically create options from fetched Database Lines
+                    if (order.status === 'pending') {
                         let opts = '<option value="" disabled selected>Select Line...</option>';
-                        if(dynamicLines.length > 0) {
-                            dynamicLines.forEach(line => {
+                        if (allAvailableLines.length > 0) {
+                            allAvailableLines.forEach(line => {
                                 opts += `<option value="${line}">${line}</option>`;
                             });
                         } else {
-                            opts += `<option value="" disabled>Loading lines from server...</option>`;
+                            opts += `<option value="" disabled>No lines available...</option>`;
                         }
 
                         actionUI = `
@@ -341,28 +873,31 @@
             });
 
             document.getElementById('orderCount').innerText = `${pCount} In Progress`;
-            document.getElementById('compOrderCount').innerText = `${cCount} Completed`;
-            if(pCount===0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
-            if(cCount===0) compList.innerHTML = `<div class="text-center py-10 text-gray-400">No completed orders.</div>`;
+            if (pCount === 0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
+        };
+
+        onValue(ref(db, 'supervisor_data/orders'), (snap) => {
+            currentOrders = snap.val() || {};
+            window.renderOrders();
         });
 
         // Change Status
-        window.changeStatus = async function(key, newStatus, forceLine = null) {
+        window.changeStatus = async function (key, newStatus, forceLine = null) {
             let targetLine = forceLine;
-            
-            if(newStatus === 'active') {
-                if(!targetLine) {
+
+            if (newStatus === 'active') {
+                if (!targetLine) {
                     const sel = document.getElementById(`line_${key}`);
-                    if(!sel || !sel.value) return showAlert('Select a line!', 'error');
+                    if (!sel || !sel.value) return showAlert('Select a line!', 'error');
                     targetLine = sel.value;
                 }
                 let activeCount = Object.values(currentOrders).filter(o => o.status === 'active' && o.assignedLine === targetLine).length;
-                if(activeCount >= 3) return showAlert(`${targetLine} already has 3 active orders!`, 'error');
+                if (activeCount >= 3) return showAlert(`${targetLine} already has 3 active orders!`, 'error');
             }
 
             let updates = { status: newStatus };
-            if(targetLine) updates.assignedLine = targetLine;
-            if(newStatus === 'active' && !currentOrders[key].assignedTime) updates.assignedTime = Date.now();
+            if (targetLine) updates.assignedLine = targetLine;
+            if (newStatus === 'active' && !currentOrders[key].assignedTime) updates.assignedTime = Date.now();
 
             toggleLoader(true);
             try {
@@ -372,24 +907,25 @@
         }
 
         // 4. Matrix & Auto-Complete Logic
-        window.loadProductionMatrix = async function() {
+        window.loadProductionMatrix = async function () {
             const tbody = document.getElementById('matrixTableBody');
+            if (!tbody) return;
             tbody.innerHTML = `<tr><td colspan="14" class="text-center py-6 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i> Syncing Data...</td></tr>`;
 
             try {
-                const [ordersSnap, eventsSnap] = await Promise.all([ get(ref(db, 'supervisor_data/orders')), get(ref(db, 'production_events')) ]);
+                const [ordersSnap, eventsSnap] = await Promise.all([get(ref(db, 'supervisor_data/orders')), get(ref(db, 'production_events'))]);
                 const orders = ordersSnap.val() || {};
                 const events = eventsSnap.val() || {};
-                
+
                 let orderProducedTotals = {}; Object.keys(orders).forEach(k => orderProducedTotals[k] = 0);
                 let matrixMap = {};
 
                 Object.values(events).forEach(ev => {
                     const line = ev.lineName; const prod = ev.product;
-                    
+
                     let matchedOrderId = "-"; let matchedOrderObj = null;
-                    for(let [oId, oData] of Object.entries(orders)) {
-                        if(oData.assignedLine === line && oData.product === prod && ev.timestamp >= (oData.assignedTime || 0)) {
+                    for (let [oId, oData] of Object.entries(orders)) {
+                        if (oData.assignedLine === line && oData.product === prod && ev.timestamp >= (oData.assignedTime || 0)) {
                             matchedOrderId = oId; matchedOrderObj = oData;
                             orderProducedTotals[oId] += parseInt(ev.qty || 0);
                             break;
@@ -398,37 +934,37 @@
 
                     let displayOrderNo = matchedOrderObj ? `${matchedOrderObj.orderNumber} (${matchedOrderObj.category})` : "-";
                     let mKey = `${ev.date}_${line}_${prod}_${matchedOrderId}`;
-                    
-                    if(!matrixMap[mKey]) matrixMap[mKey] = { date: ev.date, line: line, orderNo: displayOrderNo, product: prod, total: 0, hours: {} };
-                    
+
+                    if (!matrixMap[mKey]) matrixMap[mKey] = { date: ev.date, line: line, orderNo: displayOrderNo, product: prod, total: 0, hours: {} };
+
                     let q = parseInt(ev.qty || 0);
                     matrixMap[mKey].total += q;
                     matrixMap[mKey].hours[ev.hour] = (matrixMap[mKey].hours[ev.hour] || 0) + q;
                 });
 
-                for(let [oId, oData] of Object.entries(orders)) {
-                    if(oData.status === 'active' && orderProducedTotals[oId] >= oData.quantity) {
+                for (let [oId, oData] of Object.entries(orders)) {
+                    if (oData.status === 'active' && orderProducedTotals[oId] >= oData.quantity) {
                         update(ref(db, `supervisor_data/orders/${oId}`), { status: 'completed', completedTime: Date.now() });
                         showAlert(`Order ${oData.orderNumber} Auto-Completed!`, 'success');
                     }
                 }
 
-                let sortedKeys = Object.keys(matrixMap).sort((a,b) => b.localeCompare(a));
+                let sortedKeys = Object.keys(matrixMap).sort((a, b) => b.localeCompare(a));
                 tbody.innerHTML = '';
-                
-                if(sortedKeys.length === 0) return tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-gray-400">No hardware data found</td></tr>`;
+
+                if (sortedKeys.length === 0) return tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-gray-400">No hardware data found</td></tr>`;
 
                 sortedKeys.forEach(key => {
                     const row = matrixMap[key];
                     let tr = document.createElement('tr');
-                    
+
                     let hourCells = '';
-                    for(let h=8; h<=17; h++) {
-                        let hrStr = h < 10 ? '0'+h : ''+h;
+                    for (let h = 8; h <= 18; h++) {
+                        let hrStr = h < 10 ? '0' + h : '' + h;
                         let val = row.hours[hrStr];
                         hourCells += val ? `<td class="px-2 py-3 text-center font-bold text-gray-800">${val}</td>` : `<td class="px-2 py-3 text-center text-gray-300">-</td>`;
                     }
-                    
+
                     tr.innerHTML = `
                         <td class="px-2 py-3 whitespace-nowrap bg-white sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                             <div class="text-[9px] text-gray-400">${row.date.substring(5)}</div>
@@ -442,6 +978,184 @@
                 });
             } catch (error) { tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-red-400">Error: ${error.message}</td></tr>`; }
         };
+
+        // --- NEW Daily Output Logic ---
+        window.switchDailyTab = function (tabName) {
+            ['entry', 'report'].forEach(t => {
+                document.getElementById(`daily-sec-${t}`).classList.add('hide');
+                const btn = document.getElementById(`daily-tab-${t}`);
+                btn.classList.remove('bg-white', 'text-purple-700', 'shadow-sm');
+                btn.classList.add('text-gray-600');
+            });
+            document.getElementById(`daily-sec-${tabName}`).classList.remove('hide');
+            const activeBtn = document.getElementById(`daily-tab-${tabName}`);
+            activeBtn.classList.remove('text-gray-600');
+            activeBtn.classList.add('bg-white', 'text-purple-700', 'shadow-sm');
+        };
+
+
+
+        document.getElementById('saveDailyBtn').addEventListener('click', async () => {
+            const date = document.getElementById('dailyDate').value;
+            const line = document.getElementById('dailyLineSelect').value;
+            const out = parseInt(document.getElementById('dailyOutput').value || 0);
+            const workers = parseInt(document.getElementById('dailyWorkers').value || 0);
+
+            if (!date || !line) return showAlert('Date and Line required', 'error');
+            if (out <= 0 && workers <= 0) return showAlert('Enter output or workers', 'error');
+
+            toggleLoader(true);
+            try {
+                await set(ref(db, `supervisor_data/daily_output/${date}/${line}`), {
+                    output: out, workers: workers, timestamp: Date.now()
+                });
+                showAlert('Daily data saved!', 'success');
+                document.getElementById('dailyOutput').value = '';
+                document.getElementById('dailyWorkers').value = '';
+            } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
+        });
+
+        window.generateMonthlyReport = async function () {
+            const mMonth = document.getElementById('reportMonth').value; // YYYY-MM
+            const mLine = document.getElementById('reportLineSelect').value;
+
+            if (!mMonth || !mLine) return showAlert('Select Month and Line', 'error');
+
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td></tr>`;
+
+            try {
+                const snap = await get(ref(db, `supervisor_data/daily_output`));
+                const allData = snap.val() || {};
+
+                let tOut = 0; let tWrk = 0;
+                let rows = '';
+
+                // Filter by month (YYYY-MM)
+                Object.keys(allData).sort().forEach(date => {
+                    if (date.startsWith(mMonth) && allData[date][mLine]) {
+                        const d = allData[date][mLine];
+                        tOut += d.output || 0;
+                        tWrk += d.workers || 0;
+                        rows += `<tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-800">${date}</td>
+                            <td class="px-3 py-2 border-b text-center font-bold text-emerald-600">${d.output || 0}</td>
+                            <td class="px-3 py-2 border-b text-center font-bold text-blue-600">${d.workers || 0}</td>
+                        </tr>`;
+                    }
+                });
+
+                document.getElementById('reportTotalOutput').innerText = tOut;
+                document.getElementById('reportTotalWorkers').innerText = tWrk;
+
+                if (rows === '') tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-gray-400">No data for ${mMonth}</td></tr>`;
+                else tbody.innerHTML = rows;
+
+            } catch (e) {
+                showAlert(e.message, 'error');
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-red-400">Error loading data</td></tr>`;
+            }
+        };
+
+        // --- NEW Testing Room Firebase Logic ---
+        const badge = document.getElementById("testStatusBadge");
+        const lastMsg = document.getElementById("testLastMsg");
+        const needle = document.getElementById("dialNeedle");
+        const activeArc = document.getElementById("activeArc");
+        const espBadge = document.getElementById("espStatusBadge");
+        const mcuBadge = document.getElementById("arduinoStatusBadge");
+
+        let lastHeartbeat = 0;
+
+        // Listen to Testing Room Status from Firebase
+        onValue(ref(db, 'testing_room/system'), (snap) => {
+            if (snap.exists()) {
+                const data = snap.val();
+                let st = data.status || "OFFLINE";
+                let msg = data.message || "None";
+                let serverTime = data.lastHeartbeat || 0;
+
+                // Update ESP status based on heartbeat
+                const isEspOffline = Date.now() - serverTime > 5000 && serverTime !== 0;
+                if (isEspOffline) {
+                    st = "ARDUINO OFFLINE";
+                    espBadge.innerText = "ESP OFF";
+                    espBadge.className = "s-badge s-error text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent";
+                } else {
+                    espBadge.innerText = "ESP ON";
+                    espBadge.className = "s-badge s-working text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent";
+                }
+
+                // Update MCU status based on system state
+                if (st === "ARDUINO OFFLINE" || msg.includes("Arduino Offline") || st === "OFFLINE") {
+                    mcuBadge.innerText = "MCU OFF";
+                    mcuBadge.className = "s-badge s-error text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent";
+                } else {
+                    mcuBadge.innerText = "MCU ON";
+                    mcuBadge.className = "s-badge s-working text-[8px] mb-0 px-1.5 py-0.5 rounded border border-transparent";
+                }
+
+                badge.innerText = st;
+                lastMsg.innerText = msg;
+                badge.className = "s-badge text-xs mb-0";
+                needle.classList.remove("sweeping");
+
+                if (st.includes("WORKING")) {
+                    badge.classList.add("s-working");
+                    needle.classList.add("sweeping");
+                    needle.querySelector('line').setAttribute('stroke', '#3fb950');
+                    needle.querySelector('circle').setAttribute('fill', '#3fb950');
+                    activeArc.setAttribute('stroke', '#3fb950');
+                }
+                else if (st.includes("RESTING")) {
+                    badge.classList.add("s-resting");
+                    needle.style.transform = "rotate(0deg)";
+                    needle.querySelector('line').setAttribute('stroke', '#d29922');
+                    needle.querySelector('circle').setAttribute('fill', '#d29922');
+                    activeArc.setAttribute('stroke', '#d29922');
+                }
+                else if (st.includes("ERROR")) {
+                    badge.classList.add("s-error");
+                    if (msg.includes("UP")) needle.style.transform = "rotate(55deg)";
+                    else needle.style.transform = "rotate(-55deg)";
+                    needle.querySelector('line').setAttribute('stroke', '#f85149');
+                    needle.querySelector('circle').setAttribute('fill', '#f85149');
+                    activeArc.setAttribute('stroke', '#f85149');
+                }
+                else {
+                    badge.classList.add("s-offline");
+                    needle.style.transform = "rotate(0deg)";
+                    needle.querySelector('line').setAttribute('stroke', '#58a6ff');
+                    activeArc.setAttribute('stroke', '#30363d');
+                }
+
+                if (msg.includes("Lower Limit") && !st.includes("WORKING")) needle.style.transform = "rotate(-45deg)";
+                else if (msg.includes("Upper Limit") && !st.includes("WORKING")) needle.style.transform = "rotate(45deg)";
+            }
+        });
+
+        // Load existing settings
+        onValue(ref(db, 'testing_room/settings'), (snap) => {
+            if (snap.exists()) {
+                document.getElementById('testOnTime').value = snap.val().onTime || 60;
+                document.getElementById('testOffTime').value = snap.val().offTime || 30;
+            }
+        });
+
+        window.updateTestSettings = async function () {
+            const onT = document.getElementById('testOnTime').value;
+            const offT = document.getElementById('testOffTime').value;
+            const btn = document.getElementById('testUpdateBtn');
+            btn.innerText = "UPDATING...";
+
+            try {
+                await update(ref(db, 'testing_room/settings'), { onTime: parseInt(onT), offTime: parseInt(offT) });
+                showAlert("Test Cycles Updated!", "success");
+            } catch (e) { showAlert(e.message, "error"); }
+            setTimeout(() => { btn.innerText = "UPDATE CYCLES"; }, 1000);
+        }
+
     </script>
 </body>
+
 </html>
