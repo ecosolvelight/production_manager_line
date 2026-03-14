@@ -1056,20 +1056,37 @@
                     const card = document.createElement('div');
                     card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden";
                     const displayId = `${order.orderNumber} (${order.category})`;
+                    
+                    let linesArr = order.assignedLines ? Object.keys(order.assignedLines) : [];
+                    let assignedLinesStr = linesArr.length > 0 ? linesArr.join(', ') : 'None';
+                    
                     let borderColor = order.status === 'active' ? 'bg-emerald-500' : (order.status === 'hold' ? 'bg-orange-500' : 'bg-gray-300');
 
                     let actionUI = '';
+                    let opts = '<option value="" disabled selected>Select Line...</option>';
+                    dynamicLines.forEach(line => {
+                        // Don't show lines it's already active on
+                        if (!linesArr.includes(line)) opts += `<option value="${line}">${line}</option>`;
+                    });
+
                     if (order.status === 'pending') {
-                        let opts = '<option value="" disabled selected>Select Line...</option>';
-                        dynamicLines.forEach(line => opts += `<option value="${line}">${line}</option>`);
                         actionUI = `<select id="line_${key}" class="flex-1 text-xs border rounded p-2 outline-none border-orange-200">${opts}</select>
                                     <button onclick="window.changeStatus('${key}', 'active')" class="bg-emerald-500 text-white px-3 py-2 rounded font-bold text-xs shadow">ACTIVE</button>`;
                     } else if (order.status === 'active') {
-                        actionUI = `<div class="flex-1 text-xs font-bold text-emerald-600"><i class="fas fa-play-circle mr-1"></i> Running on ${order.assignedLine}</div>
-                                    <button onclick="window.changeStatus('${key}', 'hold')" class="bg-orange-500 text-white px-3 py-2 rounded font-bold text-xs shadow">HOLD</button>`;
+                        let addMoreUI = '';
+                        if (linesArr.length < dynamicLines.length) {
+                            addMoreUI = `<select id="line_${key}" class="w-24 text-[10px] border rounded p-1 outline-none border-emerald-200 mr-2">${opts}</select>
+                                         <button onclick="window.changeStatus('${key}', 'active')" class="bg-blue-500 text-white px-2 py-1 rounded font-bold text-[10px] shadow">ADD LINE</button>`;
+                        }
+                        
+                        actionUI = `<div class="flex-1 flex flex-col gap-1 text-[11px] font-bold text-emerald-600">
+                                        <div><i class="fas fa-play-circle mr-1"></i> Running on: ${assignedLinesStr}</div>
+                                        <div class="flex items-center mt-1">${addMoreUI}</div>
+                                    </div>
+                                    <button onclick="window.changeStatus('${key}', 'hold')" class="bg-orange-500 text-white px-3 py-2 rounded font-bold text-xs shadow h-full">HOLD</button>`;
                     } else if (order.status === 'hold') {
-                        actionUI = `<div class="flex-1 text-xs font-bold text-orange-600"><i class="fas fa-pause-circle mr-1"></i> Paused on ${order.assignedLine}</div>
-                                    <button onclick="window.changeStatus('${key}', 'active', '${order.assignedLine}')" class="bg-emerald-500 text-white px-3 py-2 rounded font-bold text-xs shadow">RESUME</button>`;
+                        actionUI = `<div class="flex-1 text-xs font-bold text-orange-600"><i class="fas fa-pause-circle mr-1"></i> Paused</div>
+                                    <button onclick="window.changeStatus('${key}', 'active', 'RESUME')" class="bg-emerald-500 text-white px-3 py-2 rounded font-bold text-xs shadow">RESUME</button>`;
                     }
 
                     card.innerHTML = `<div class="absolute top-0 left-0 w-1 h-full ${borderColor}"></div>
@@ -1085,15 +1102,34 @@
             if (pCount === 0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
         };
 
-        window.renderAllOrdersReport = function () {
+        window.renderAllOrdersReport = async function () {
             const tbody = document.getElementById('allOrdersTableBody');
             if (!tbody) return;
-            tbody.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-indigo-500"><i class="fas fa-spinner fa-spin mr-2"></i> Analyzing Data...</td></tr>';
 
-            let ordersArray = Object.values(currentOrders);
+            let ordersArray = Object.keys(currentOrders).map(k => ({ id: k, ...currentOrders[k] }));
             if (ordersArray.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-gray-400">No Orders Found.</td></tr>';
                 return;
+            }
+
+            // --- FETCH ACTUAL TOTALS (OPTIMIZED QUERY) ---
+            let producedTotals = {};
+            try {
+                // To prevent downloading the whole database, we ONLY fetch events for active/pending/hold orders using Indexed Query
+                let activeOrders = ordersArray.filter(o => o.status !== 'completed').map(o => o.id);
+                let fetchPromises = activeOrders.map(oId => 
+                    get(query(ref(db, 'production_events'), orderByChild('orderId'), equalTo(oId))).then(snap => {
+                        if (snap.exists()) {
+                            let total = 0;
+                            Object.values(snap.val()).forEach(ev => total += parseInt(ev.qty || 0));
+                            producedTotals[oId] = total;
+                        }
+                    })
+                );
+                await Promise.all(fetchPromises);
+            } catch (e) {
+                console.error("Error fetching totals:", e);
             }
 
             // Sort orders: Active first, then pending/hold, completed last
@@ -1110,9 +1146,11 @@
                 else if (o.status === 'hold') { badgeClass = 'bg-orange-100 text-orange-700 font-bold'; icon = '<i class="fas fa-pause-circle mr-1"></i>'; }
                 else if (o.status === 'completed') { badgeClass = 'bg-blue-100 text-blue-700 font-bold'; icon = '<i class="fas fa-check-circle mr-1"></i>'; }
 
-                // Determine estimated produced count (based on completion or active states).
-                // True precision requires parsing all events, but for a quick overview we rely on target/status.
-                let producedStr = o.status === 'completed' ? o.quantity : '-';
+                let producedAmt = producedTotals[o.id] || 0;
+                let producedStr = producedAmt;
+                
+                // Fallback for really old completed orders before orderId was introduced
+                if (o.status === 'completed' && producedAmt === 0) producedStr = o.quantity;
 
                 html += `
                     <tr>
@@ -1122,7 +1160,7 @@
                         </td>
                         <td class="px-3 py-2 border-b text-center">
                             <span class="px-2 py-0.5 rounded text-[10px] ${badgeClass} uppercase">${icon}${o.status}</span>
-                            ${o.assignedLine ? `<div class="text-[9px] text-gray-400 mt-0.5">on ${o.assignedLine}</div>` : ''}
+                            ${o.assignedLines ? `<div class="text-[9px] text-gray-400 mt-0.5">on ${Object.keys(o.assignedLines).join(', ')}</div>` : ''}
                         </td>
                         <td class="px-3 py-2 border-b text-center font-bold text-gray-700">${o.quantity}</td>
                         <td class="px-3 py-2 border-b text-center font-bold text-indigo-600">${producedStr}</td>
@@ -1139,24 +1177,67 @@
             renderOrders();
         });
 
-        window.changeStatus = async function (key, newStatus, forceLine = null) {
-            let targetLine = forceLine;
-            if (newStatus === 'active') {
-                if (!targetLine) {
-                    const sel = document.getElementById(`line_${key}`);
-                    if (!sel || !sel.value) return showAlert('Select a line!', 'error');
-                    targetLine = sel.value;
-                }
-                let activeCount = Object.values(currentOrders).filter(o => o.status === 'active' && o.assignedLine === targetLine).length;
-                if (activeCount >= 3) return showAlert(`${targetLine} already has 3 active orders!`, 'error');
+        window.changeStatus = async function (key, newStatus, actionType = null) {
+            let targetLine = null;
+            let order = currentOrders[key];
+            let isResume = actionType === 'RESUME';
+            
+            if (newStatus === 'active' && !isResume) {
+                const sel = document.getElementById(`line_${key}`);
+                if (!sel || !sel.value) return showAlert('Select a line!', 'error');
+                targetLine = sel.value;
             }
-            let updates = { status: newStatus };
-            if (targetLine) updates.assignedLine = targetLine;
-            if (newStatus === 'active' && !currentOrders[key].assignedTime) updates.assignedTime = Date.now();
-
+            
             toggleLoader(true);
             try {
-                await safeUpdate(`supervisor_data/orders/${key}`, updates);
+                let promises = [];
+                let updates = { status: newStatus };
+                
+                if (newStatus === 'active') {
+                    if (!order.assignedTime) updates.assignedTime = Date.now();
+                    
+                    if (targetLine) {
+                        updates[`assignedLines/${targetLine}`] = true;
+                        // Device visibility
+                        promises.push(set(ref(db, `line_active_orders/${targetLine}/${key}`), {
+                            orderNumber: order.orderNumber,
+                            category: order.category
+                        }));
+                    } else if (isResume && order.assignedLines) {
+                        // Resume on all previously assigned lines
+                        Object.keys(order.assignedLines).forEach(line => {
+                            promises.push(set(ref(db, `line_active_orders/${line}/${key}`), {
+                                orderNumber: order.orderNumber,
+                                category: order.category
+                            }));
+                        });
+                    }
+                } else if (newStatus === 'hold' || newStatus === 'completed') {
+                    if (newStatus === 'completed') {
+                        if (order.assignedLines) {
+                            Object.keys(order.assignedLines).forEach(line => {
+                                promises.push(set(ref(db, `line_active_orders/${line}/${key}`), null));
+                            });
+                        }
+                        updates.completedTime = Date.now();
+                    }
+                }
+
+                if (navigator.onLine) {
+                    promises.push(update(ref(db, `supervisor_data/orders/${key}`), updates));
+                    await Promise.all(promises);
+                } else {
+                    // Offline handling
+                    offlineQueue.push({ action: 'update', path: `supervisor_data/orders/${key}`, data: updates });
+                    if (newStatus === 'active') {
+                        if (targetLine) offlineQueue.push({ action: 'set', path: `line_active_orders/${targetLine}/${key}`, data: { orderNumber: order.orderNumber, category: order.category } });
+                        else if (isResume && order.assignedLines) Object.keys(order.assignedLines).forEach(l => offlineQueue.push({ action: 'set', path: `line_active_orders/${l}/${key}`, data: { orderNumber: order.orderNumber, category: order.category } }));
+                    } else if (newStatus === 'completed') {
+                        if (order.assignedLines) Object.keys(order.assignedLines).forEach(l => offlineQueue.push({ action: 'set', path: `line_active_orders/${l}/${key}`, data: null }));
+                    }
+                    cacheData('offlineQueue', offlineQueue);
+                }
+                
                 let messageSuffix = navigator.onLine ? '' : ' (Saved to Sync Queue)';
                 showAlert(`Order marked as ${newStatus.toUpperCase()}${messageSuffix}`, 'success');
             } catch (e) { showAlert(e.message, 'error'); } finally { toggleLoader(false); }
@@ -1192,16 +1273,12 @@
                 processMatrix(currentOrders, cachedEvents, tbody);
             }
 
-            // Always fetch fresh data quietly
+            // Always fetch fresh data quietly using specific Date filter to prevent full DB download
             try {
-                let dbQuery;
-                if (currentMatrixTab === 'today') {
-                    // Optimized fetching: only get today's data!
-                    dbQuery = query(ref(db, 'production_events'), orderByChild('date'), equalTo(getSLDateString()));
-                } else {
-                    // Still fetching all for history until pagination is added later
-                    dbQuery = ref(db, 'production_events');
-                }
+                let filterDate = document.getElementById('matrixFilterDate').value || getSLDateString();
+                if (activeRole === 'supervisor') filterDate = getSLDateString(); // Lock supervisor to today
+
+                let dbQuery = query(ref(db, 'production_events'), orderByChild('date'), equalTo(filterDate));
 
                 const eventsSnap = await get(dbQuery);
                 const events = eventsSnap.val() || {};
@@ -1221,6 +1298,7 @@
 
             let orderProducedTotals = {}; Object.keys(orders).forEach(k => orderProducedTotals[k] = 0);
             let matrixMap = {};
+            let lineSummaries = {}; // Stores total summaries per line
             let autoCompletesFound = false;
 
             Object.values(events).forEach(ev => {
@@ -1229,26 +1307,20 @@
                 if (filterLine !== 'ALL' && ev.lineName !== filterLine) return;
 
                 const line = ev.lineName;
-                const prod = ev.product;
-                let matchedOrderId = "-";
-                let matchedOrderObj = null;
+                let matchedOrderId = ev.orderId || "-";
+                let matchedOrderObj = matchedOrderId !== "-" ? orders[matchedOrderId] : null;
 
-                // Phase 2: STRICT MATCHING (Line + Product + Time boundary)
-                for (let [oId, oData] of Object.entries(orders)) {
-                    if (oData.assignedLine === line && oData.product === prod) {
-                        if (ev.timestamp >= (oData.assignedTime || 0)) {
-                            // If order completed, do not assign new events after completion time
-                            if (oData.status !== 'completed' || (oData.status === 'completed' && ev.timestamp <= (oData.completedTime || 9999999999999))) {
-                                matchedOrderId = oId;
-                                matchedOrderObj = oData;
-                                orderProducedTotals[oId] += parseInt(ev.qty || 0);
-                                break;
-                            }
-                        }
-                    }
+                // Priority: Use matched order product name, fallback to event product (legacy data).
+                const prod = matchedOrderObj ? matchedOrderObj.product : (ev.product || "Unknown Product");
+
+                if (matchedOrderId !== "-") {
+                    orderProducedTotals[matchedOrderId] = (orderProducedTotals[matchedOrderId] || 0) + parseInt(ev.qty || 0);
                 }
 
-                let displayOrderNo = matchedOrderObj ? `${matchedOrderObj.orderNumber} (${matchedOrderObj.category})` : "-";
+                let displayOrderNo = matchedOrderId !== "-" 
+                    ? `${ev.orderNo || (matchedOrderObj ? matchedOrderObj.orderNumber : "-")} (${ev.category || (matchedOrderObj ? matchedOrderObj.category : "-")})` 
+                    : "-";
+
                 let mKey = `${ev.date}_${line}_${prod}_${matchedOrderId}`;
 
                 if (!matrixMap[mKey]) matrixMap[mKey] = { date: ev.date, line: line, orderNo: displayOrderNo, product: prod, total: 0, hours: {} };
@@ -1259,9 +1331,35 @@
 
                 matrixMap[mKey].total += q;
                 matrixMap[mKey].hours[safeHourStr] = (matrixMap[mKey].hours[safeHourStr] || 0) + q;
+
+                // --- LINE TOTALS AGGREGATOR ---
+                if (!lineSummaries[line]) lineSummaries[line] = { total: 0, hours: {} };
+                lineSummaries[line].total += q;
+                lineSummaries[line].hours[safeHourStr] = (lineSummaries[line].hours[safeHourStr] || 0) + q;
             });
 
-            // Phase 2: Auto-Complete Check logic removed from here as it is moved to a global background task
+            // --- AUTO COMPLETE CHECK ---
+            for (let oId in orderProducedTotals) {
+                let oData = orders[oId];
+                if (oData && oData.status === 'active') {
+                    if (orderProducedTotals[oId] >= oData.quantity) {
+                        let updates = { status: 'completed', completedTime: Date.now() };
+                        let promises = [];
+                        promises.push(update(ref(db, `supervisor_data/orders/${oId}`), updates));
+                        
+                        if (oData.assignedLines) {
+                            Object.keys(oData.assignedLines).forEach(line => {
+                                promises.push(set(ref(db, `line_active_orders/${line}/${oId}`), null));
+                            });
+                        }
+                        
+                        Promise.all(promises).then(() => {
+                            showAlert(`Order ${oData.orderNumber} Target Reached! (Auto-Completed)`, 'success');
+                        }).catch(console.error);
+                    }
+                }
+            }
+
             // UI Render
             let sortedKeys = Object.keys(matrixMap).sort((a, b) => b.localeCompare(a));
             tbody.innerHTML = '';
@@ -1288,33 +1386,30 @@
                     ${hourCells}`;
                 tbody.appendChild(tr);
             });
-        }
 
-        // --- Background Auto-Complete Listener ---
-        let currentTargetCheckDateStr = getSLDateString();
-        onValue(query(ref(db, 'production_events'), orderByChild('date'), equalTo(currentTargetCheckDateStr)), (snap) => {
-            if (!snap.exists() || Object.keys(currentOrders).length === 0) return;
-            let events = snap.val();
-            let activeProduced = {};
-            // Sum up active orders production for today
-            Object.values(events).forEach(ev => {
-                for (let [oId, oData] of Object.entries(currentOrders)) {
-                    if (oData.status === 'active' && oData.assignedLine === ev.lineName && oData.product === ev.product) {
-                        if (ev.timestamp >= (oData.assignedTime || 0)) {
-                            activeProduced[oId] = (activeProduced[oId] || 0) + parseInt(ev.qty || 0);
-                        }
-                    }
+            // Render Line Summary Rows
+            Object.keys(lineSummaries).sort().forEach(line => {
+                let row = lineSummaries[line];
+                let summaryTr = document.createElement('tr');
+                summaryTr.className = 'bg-blue-50 border-t-[3px] border-blue-200';
+                
+                let sHourCells = '';
+                for (let h = 8; h <= 18; h++) {
+                    let hrStr = h < 10 ? '0' + h : '' + h;
+                    let val = row.hours[hrStr];
+                    sHourCells += val ? `<td class="px-2 py-3 text-center font-extrabold text-blue-900">${val}</td>` : `<td class="px-2 py-3 text-center text-blue-300">-</td>`;
                 }
+
+                summaryTr.innerHTML = `
+                    <td colspan="3" class="px-3 py-3 font-bold text-right text-blue-900 sticky left-0 z-10 bg-blue-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                        <i class="fas fa-chart-line mr-2"></i> ${line} - TOTAL OUTPUT
+                    </td>
+                    <td class="px-2 py-3 font-extrabold text-white text-center bg-blue-600">${row.total}</td>
+                    ${sHourCells}
+                `;
+                tbody.appendChild(summaryTr);
             });
-
-            for (let oId in activeProduced) {
-                let oData = currentOrders[oId];
-                if (activeProduced[oId] >= oData.quantity) {
-                    safeUpdate(`supervisor_data/orders/${oId}`, { status: 'completed', completedTime: Date.now() });
-                    showAlert(`Order ${oData.orderNumber} Target Reached! (Auto-Completed in background)`, 'success');
-                }
-            }
-        });
+        }
 
         // --- Daily Output ---
         window.switchDailyTab = function (tabName) {
@@ -1605,28 +1700,12 @@
                     Object.keys(events).forEach(k => {
                         let e = events[k];
                         let eHour = parseInt(e.hour);
-                        if (e.lineName === line && e.product === productFilter && eHour >= hStart && eHour <= hEnd) {
-
-                            // STRICT MATCHING Check: Is this event already assigned to a valid active/completed order?
-                            let isAlreadyAssigned = false;
-                            for (let [oId, oData] of Object.entries(currentOrders)) {
-                                if (oData.assignedLine === e.lineName && oData.product === e.product) {
-                                    if (e.timestamp >= (oData.assignedTime || 0)) {
-                                        // It belongs to this order! Check if it was during the time the order was active or completed
-                                        if (oData.status !== 'completed' || (oData.status === 'completed' && e.timestamp <= (oData.completedTime || 9999999999999))) {
-                                            isAlreadyAssigned = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // If it is NOT assigned to any order, it is an orphan (-) data point, so we can fix it!
-                            if (!isAlreadyAssigned) {
-                                fixEventsCache[k] = e;
-                                count++;
-                                sum += parseInt(e.qty || 0);
-                            }
+                        let eventProduct = e.product || (e.orderId && currentOrders[e.orderId] ? currentOrders[e.orderId].product : null);
+                        if (e.lineName === line && (eventProduct === productFilter || e.product === productFilter) && eHour >= hStart && eHour <= hEnd) {
+                            // Any event matching the line and product in this hour can be reassigned directly using our new data fix tool.
+                            fixEventsCache[k] = e;
+                            count++;
+                            sum += parseInt(e.qty || 0);
                         }
                     });
                 }
@@ -1655,16 +1734,16 @@
             try {
                 let promises = [];
                 evKeys.forEach(k => {
-                    // Update the event to align its product string, and logically it should fall under the new active timeline.
-                    // Important note: the matrix binds events matching "line" and "product" occurring after "assignedTime".
-                    // If we change the product, they'll match the order. We also need to ensure its timestamp is valid for the target assignment.
                     let baseEvent = fixEventsCache[k];
-                    let newTimestamp = Math.max(baseEvent.timestamp, (tOrder.assignedTime || 0) + 1); // push timestamp forward minimally to qualify under standard order timeline.
+                    
+                    let possibleLine = tOrder.assignedLines ? Object.keys(tOrder.assignedLines)[0] : baseEvent.lineName;
 
                     let nodeUpdate = {
                         product: tOrder.product,
-                        lineName: tOrder.assignedLine || baseEvent.lineName,
-                        timestamp: newTimestamp
+                        lineName: possibleLine,
+                        orderId: targetOrderId,
+                        orderNo: tOrder.orderNumber,
+                        category: tOrder.category
                     };
                     promises.push(update(ref(db, `production_events/${k}`), nodeUpdate));
                 });
