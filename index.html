@@ -752,7 +752,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, update, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // --- Firebase Config ---
         const mainFirebaseConfig = { databaseURL: "https://linemanage002-default-rtdb.asia-southeast1.firebasedatabase.app/" };
@@ -1102,10 +1102,12 @@
             if (pCount === 0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
         };
 
-        window.renderAllOrdersReport = async function () {
+        window.renderAllOrdersReport = async function (isAutoRefresh = false) {
             const tbody = document.getElementById('allOrdersTableBody');
             if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-indigo-500"><i class="fas fa-spinner fa-spin mr-2"></i> Analyzing Data...</td></tr>';
+            if (!isAutoRefresh) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-indigo-500"><i class="fas fa-spinner fa-spin mr-2"></i> Analyzing Data...</td></tr>';
+            }
 
             let ordersArray = Object.keys(currentOrders).map(k => ({ id: k, ...currentOrders[k] }));
             if (ordersArray.length === 0) {
@@ -1113,21 +1115,32 @@
                 return;
             }
 
-            // --- FETCH ACTUAL TOTALS (OPTIMIZED QUERY) ---
+            // --- FETCH ACTUAL TOTALS (OPTIMIZED QUERY WITH LEGACY SUPPORT) ---
             let producedTotals = {};
             try {
-                // To prevent downloading the whole database, we ONLY fetch events for active/pending/hold orders using Indexed Query
-                let activeOrders = ordersArray.filter(o => o.status !== 'completed').map(o => o.id);
-                let fetchPromises = activeOrders.map(oId => 
-                    get(query(ref(db, 'production_events'), orderByChild('orderId'), equalTo(oId))).then(snap => {
-                        if (snap.exists()) {
-                            let total = 0;
-                            Object.values(snap.val()).forEach(ev => total += parseInt(ev.qty || 0));
-                            producedTotals[oId] = total;
+                // Fetch ALL events for today to capture legacy records lacking orderId
+                let todayYMD = getSLDateString();
+                const snap = await get(query(ref(db, 'production_events'), orderByChild('date'), equalTo(todayYMD)));
+                if (snap.exists()) {
+                    let eventsArray = Object.values(snap.val());
+                    
+                    // Pre-fill produced totals for all orders
+                    ordersArray.forEach(o => producedTotals[o.id] = 0);
+                    
+                    eventsArray.forEach(ev => {
+                        let qty = parseInt(ev.qty || 0);
+                        let evOrderId = ev.orderId;
+                        
+                        // If legacy record, try to reconstruct orderId 
+                        if (!evOrderId && ev.orderNo && ev.category) {
+                           evOrderId = `${ev.orderNo.replace('-', '')}_${ev.category}`;
                         }
-                    })
-                );
-                await Promise.all(fetchPromises);
+                        
+                        if (evOrderId && producedTotals[evOrderId] !== undefined) {
+                            producedTotals[evOrderId] += qty;
+                        }
+                    });
+                }
             } catch (e) {
                 console.error("Error fetching totals:", e);
             }
@@ -1175,6 +1188,29 @@
             currentOrders = snap.val() || {};
             cacheData('orders', currentOrders);
             renderOrders();
+            // Re-render dashboard if visible (for new phones where data loads after page open)
+            if (!document.getElementById('page-all-orders').classList.contains('hide')) {
+                renderAllOrdersReport(true);
+            }
+        });
+
+        // --- LIVE UPDATE TRIGGER (Lightweight) ---
+        let liveUpdateTimer = null;
+        let initialLoadDone = false;
+        onValue(query(ref(db, 'production_events'), limitToLast(1)), (snap) => {
+            if (!initialLoadDone) {
+                initialLoadDone = true;
+                return; // ignore initial snapshot payload
+            }
+            if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
+            liveUpdateTimer = setTimeout(() => {
+                if (!document.getElementById('page-matrix').classList.contains('hide')) {
+                    loadProductionMatrix(false, true); 
+                }
+                if (!document.getElementById('page-all-orders').classList.contains('hide')) {
+                    renderAllOrdersReport(true); 
+                }
+            }, 3000); // 3 sec debounce
         });
 
         window.changeStatus = async function (key, newStatus, actionType = null) {
@@ -1261,16 +1297,18 @@
             loadProductionMatrix();
         }
 
-        window.loadProductionMatrix = async function (forceSync = false) {
+        window.loadProductionMatrix = async function (forceSync = false, isAutoRefresh = false) {
             const tbody = document.getElementById('matrixTableBody');
             if (!tbody) return;
-            tbody.innerHTML = `<tr><td colspan="15" class="text-center py-6 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i> Fetching Data...</td></tr>`;
-
+            
             let cachedEvents = getCachedData(`events_${currentMatrixTab}`) || {};
 
-            // If offline/fast load, render cached first unless forceSync
-            if (!forceSync && Object.keys(cachedEvents).length > 0) {
-                processMatrix(currentOrders, cachedEvents, tbody);
+            if (!isAutoRefresh) {
+                if (Object.keys(cachedEvents).length === 0 || forceSync) {
+                    tbody.innerHTML = `<tr><td colspan="15" class="text-center py-6 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i> Fetching Data...</td></tr>`;
+                } else {
+                    processMatrix(currentOrders, cachedEvents, tbody);
+                }
             }
 
             // Always fetch fresh data quietly using specific Date filter to prevent full DB download
