@@ -246,7 +246,6 @@
                 </button>
             </div>
 
-            <!-- Page All Orders (New Feature) -->
             <div id="page-all-orders" class="page-transition hide flex flex-col h-full">
                 <div class="flex items-center mb-4 shrink-0 gap-3">
                     <button onclick="navigate('home')"
@@ -490,7 +489,6 @@
                                 <table class="w-full text-left border-collapse whitespace-nowrap" id="reportDataTable">
                                     <thead id="reportTableHead"
                                         class="bg-gray-50 text-[10px] uppercase text-gray-500 sticky top-0 shadow-sm z-10">
-                                        <!-- Dynamically generated headers -->
                                         <tr>
                                             <th class="px-3 py-2 border-b font-semibold">Select Month to View Data</th>
                                         </tr>
@@ -607,7 +605,6 @@
                 </div>
             </div>
 
-            <!-- Page Data Fix (Admin & Manager) -->
             <div id="page-datafix" class="page-transition hide flex flex-col h-full" data-access="admin-manager">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <h2 class="text-xl font-bold text-indigo-700"><i class="fas fa-tools text-indigo-500 mr-2"></i>Data
@@ -1102,6 +1099,30 @@
             if (pCount === 0) assignList.innerHTML = `<div class="text-center py-10 text-gray-400">No pending orders.</div>`;
         };
 
+        // --- FETCH EXACT TOTAL PER ORDER ---
+        async function getExactOrderTotal(oId, oData) {
+            try {
+                let sum = 0;
+                // Query by orderId exactly
+                const q = query(ref(db, 'production_events'), orderByChild('orderId'), equalTo(oId));
+                const snap = await get(q);
+                if (snap.exists()) {
+                    Object.values(snap.val()).forEach(ev => { sum += parseInt(ev.qty || 0); });
+                    return sum;
+                }
+                // Fallback for extremely old legacy data before orderId was saved inside events
+                const legacyQ = query(ref(db, 'production_events'), orderByChild('orderNo'), equalTo(oData.orderNumber));
+                const legacySnap = await get(legacyQ);
+                if(legacySnap.exists()){
+                     Object.values(legacySnap.val()).forEach(ev => {
+                         if(ev.category === oData.category) sum += parseInt(ev.qty || 0);
+                     });
+                     return sum;
+                }
+                return 0;
+            } catch(e) { return 0; }
+        }
+
         window.renderAllOrdersReport = async function (isAutoRefresh = false) {
             const tbody = document.getElementById('allOrdersTableBody');
             if (!tbody) return;
@@ -1115,35 +1136,25 @@
                 return;
             }
 
-            // --- FETCH ACTUAL TOTALS (OPTIMIZED QUERY WITH LEGACY SUPPORT) ---
             let producedTotals = {};
-            try {
-                // Fetch ALL events for today to capture legacy records lacking orderId
-                let todayYMD = getSLDateString();
-                const snap = await get(query(ref(db, 'production_events'), orderByChild('date'), equalTo(todayYMD)));
-                if (snap.exists()) {
-                    let eventsArray = Object.values(snap.val());
+            
+            // Loop and strictly fetch actual totals for each order
+            let promises = ordersArray.map(async (o) => {
+                // If it's fully completed and we already froze the total, reuse it! (Saves DB load)
+                if (o.status === 'completed' && o.finalProducedQty !== undefined) {
+                    producedTotals[o.id] = o.finalProducedQty;
+                } else {
+                    let sum = await getExactOrderTotal(o.id, o);
+                    producedTotals[o.id] = sum;
                     
-                    // Pre-fill produced totals for all orders
-                    ordersArray.forEach(o => producedTotals[o.id] = 0);
-                    
-                    eventsArray.forEach(ev => {
-                        let qty = parseInt(ev.qty || 0);
-                        let evOrderId = ev.orderId;
-                        
-                        // If legacy record, try to reconstruct orderId 
-                        if (!evOrderId && ev.orderNo && ev.category) {
-                           evOrderId = `${ev.orderNo.replace('-', '')}_${ev.category}`;
-                        }
-                        
-                        if (evOrderId && producedTotals[evOrderId] !== undefined) {
-                            producedTotals[evOrderId] += qty;
-                        }
-                    });
+                    // If we just noticed it was manually completed but not frozen, freeze it now!
+                    if (o.status === 'completed' && o.finalProducedQty === undefined) {
+                        safeUpdate(`supervisor_data/orders/${o.id}`, { finalProducedQty: sum });
+                    }
                 }
-            } catch (e) {
-                console.error("Error fetching totals:", e);
-            }
+            });
+
+            await Promise.all(promises);
 
             // Sort orders: Active first, then pending/hold, completed last
             ordersArray.sort((a, b) => {
@@ -1162,8 +1173,8 @@
                 let producedAmt = producedTotals[o.id] || 0;
                 let producedStr = producedAmt;
                 
-                // Fallback for really old completed orders before orderId was introduced
-                if (o.status === 'completed' && producedAmt === 0) producedStr = o.quantity;
+                // Fallback for really old completed orders before tracking started correctly
+                if (o.status === 'completed' && producedAmt === 0 && o.quantity) producedStr = o.quantity;
 
                 html += `
                     <tr>
@@ -1188,11 +1199,33 @@
             currentOrders = snap.val() || {};
             cacheData('orders', currentOrders);
             renderOrders();
-            // Re-render dashboard if visible (for new phones where data loads after page open)
             if (!document.getElementById('page-all-orders').classList.contains('hide')) {
                 renderAllOrdersReport(true);
             }
         });
+
+        // --- BACKGROUND AUTO-COMPLETE LOGIC ---
+        async function runAutoCompleteCheck() {
+            let activeOrders = Object.keys(currentOrders).filter(k => currentOrders[k].status === 'active');
+            for(let oId of activeOrders) {
+                 let oData = currentOrders[oId];
+                 let sum = await getExactOrderTotal(oId, oData);
+                 if (sum >= oData.quantity) {
+                     // Auto Complete condition met!
+                     let updates = { status: 'completed', completedTime: Date.now(), finalProducedQty: sum, assignedLines: null };
+                     let promises = [safeUpdate(`supervisor_data/orders/${oId}`, updates)];
+                     
+                     // Clear from devices instantly
+                     if (oData.assignedLines) {
+                         Object.keys(oData.assignedLines).forEach(line => {
+                             promises.push(safeSet(`line_active_orders/${line}/${oId}`, null));
+                         });
+                     }
+                     await Promise.all(promises);
+                     showAlert(`Order ${oData.orderNumber} Target Reached! (Auto-Completed)`, 'success');
+                 }
+            }
+        }
 
         // --- LIVE UPDATE TRIGGER (Lightweight) ---
         let liveUpdateTimer = null;
@@ -1204,6 +1237,7 @@
             }
             if (liveUpdateTimer) clearTimeout(liveUpdateTimer);
             liveUpdateTimer = setTimeout(() => {
+                runAutoCompleteCheck(); // Always check for completed orders in background
                 if (!document.getElementById('page-matrix').classList.contains('hide')) {
                     loadProductionMatrix(false, true); 
                 }
@@ -1256,6 +1290,7 @@
                             });
                         }
                         updates.completedTime = Date.now();
+                        updates.assignedLines = null; // CLEANUP assignedLines completely from order object
                     }
                 }
 
@@ -1269,6 +1304,7 @@
                         if (targetLine) offlineQueue.push({ action: 'set', path: `line_active_orders/${targetLine}/${key}`, data: { orderNumber: order.orderNumber, category: order.category } });
                         else if (isResume && order.assignedLines) Object.keys(order.assignedLines).forEach(l => offlineQueue.push({ action: 'set', path: `line_active_orders/${l}/${key}`, data: { orderNumber: order.orderNumber, category: order.category } }));
                     } else if (newStatus === 'completed') {
+                        updates.assignedLines = null;
                         if (order.assignedLines) Object.keys(order.assignedLines).forEach(l => offlineQueue.push({ action: 'set', path: `line_active_orders/${l}/${key}`, data: null }));
                     }
                     cacheData('offlineQueue', offlineQueue);
@@ -1334,10 +1370,8 @@
             // Enforce role limitation
             if (activeRole === 'supervisor') filterDate = todayYMD;
 
-            let orderProducedTotals = {}; Object.keys(orders).forEach(k => orderProducedTotals[k] = 0);
             let matrixMap = {};
             let lineSummaries = {}; // Stores total summaries per line
-            let autoCompletesFound = false;
 
             Object.values(events).forEach(ev => {
                 // Apply Filters First to save processing
@@ -1350,10 +1384,6 @@
 
                 // Priority: Use matched order product name, fallback to event product (legacy data).
                 const prod = matchedOrderObj ? matchedOrderObj.product : (ev.product || "Unknown Product");
-
-                if (matchedOrderId !== "-") {
-                    orderProducedTotals[matchedOrderId] = (orderProducedTotals[matchedOrderId] || 0) + parseInt(ev.qty || 0);
-                }
 
                 let displayOrderNo = matchedOrderId !== "-" 
                     ? `${ev.orderNo || (matchedOrderObj ? matchedOrderObj.orderNumber : "-")} (${ev.category || (matchedOrderObj ? matchedOrderObj.category : "-")})` 
@@ -1375,28 +1405,6 @@
                 lineSummaries[line].total += q;
                 lineSummaries[line].hours[safeHourStr] = (lineSummaries[line].hours[safeHourStr] || 0) + q;
             });
-
-            // --- AUTO COMPLETE CHECK ---
-            for (let oId in orderProducedTotals) {
-                let oData = orders[oId];
-                if (oData && oData.status === 'active') {
-                    if (orderProducedTotals[oId] >= oData.quantity) {
-                        let updates = { status: 'completed', completedTime: Date.now() };
-                        let promises = [];
-                        promises.push(update(ref(db, `supervisor_data/orders/${oId}`), updates));
-                        
-                        if (oData.assignedLines) {
-                            Object.keys(oData.assignedLines).forEach(line => {
-                                promises.push(set(ref(db, `line_active_orders/${line}/${oId}`), null));
-                            });
-                        }
-                        
-                        Promise.all(promises).then(() => {
-                            showAlert(`Order ${oData.orderNumber} Target Reached! (Auto-Completed)`, 'success');
-                        }).catch(console.error);
-                    }
-                }
-            }
 
             // UI Render
             let sortedKeys = Object.keys(matrixMap).sort((a, b) => b.localeCompare(a));
